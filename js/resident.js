@@ -2,7 +2,7 @@
  * RESIDENT.JS - Lógica de Perfil (Drive Automático + Auto-Resize Preciso + Fix Documentos + Edad en Vivo)
  */
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbw3CFISeZHijXfIbiHbLHeROagg3R6s-lSzFtzJj6GAmEG6ptoHTrbtmy7majgMAZOA4w/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzpHZgl9ZUD_NCVXR1qN45ohwiObhWgmpxgUzK883ySzC30LPRLrD3iFxKB1F22fcC3Qw/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
 let currentResidentName = new URLSearchParams(window.location.search).get('id');
