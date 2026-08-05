@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Residente - Residencial Francia</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-light">
+    <header class="main-header">
+        <div class="header-left">
+            <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
+        </div>
+        <div class="header-right" style="display: flex; align-items: center; gap: 15px;">
+            <span id="statusBadge" style="display: none; font-weight: bold; font-size: 0.85rem;"></span>
+            <h1>Ficha de Residente</h1>
+        </div>
+    </header>
+
+    <main class="profile-container">
+        <div id="toast" class="toast"></div>
+
+        <div id="loader" class="loader-container hidden">
+            <div class="spinner"></div>
+            <p>Procesando datos...</p>
+        </div>
+
+        <div id="residentForm" class="profile-form readonly-mode">
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+                <button type="button" id="btnTabPerfil" onclick="switchProfileTab('perfil')" style="padding: 12px 25px; cursor: pointer; border: none; background: var(--primary-blue); color: white; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 1.05em;">Información del Perfil</button>
+                <button type="button" id="btnTabDocs" onclick="switchProfileTab('docs')" style="padding: 12px 25px; cursor: pointer; border: 1px solid var(--border-color); border-bottom: none; background: #f0f4f8; color: #333; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 1.05em;">Documentación</button>
+            </div>
+
+            <div id="tab-perfil" class="tab-content-wrapper">
+                
+                <section class="profile-section section-1">
+                    <div class="top-info-wrapper" style="display: flex; gap: 2rem; width: 100%; align-items: stretch; flex-wrap: wrap;">
+                        
+                        <div class="photo-column" style="display: flex; flex-direction: column; gap: 12px; align-items: center; width: 250px; flex-shrink: 0;">
+                            <div class="photo-wrapper" style="margin-bottom: 5px; width: 100%; display: flex; justify-content: center;">
+                                <img id="profileImage" src="" alt="Foto Residente" onerror="this.src='https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'" style="max-width: 100%; height: auto; border-radius: 8px;">
+                            </div>
+        
+                            <label id="btnUploadContainer" for="imageUpload" class="btn btn-outline hidden" style="width: 100%; justify-content: center; cursor: pointer;">
+                                <i class="fa-solid fa-upload"></i> Cargar Imagen
+                            </label>
+                            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+
+                            <button id="btnEditPerfil" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                                <i class="fa-solid fa-pen"></i> Editar Info Perfil
+                            </button>
+
+                            <button id="btnSavePerfil" class="btn btn-success hidden" style="width: 100%; justify-content: center;">
+                                <i class="fa-solid fa-save"></i> Guardar Perfil
+                            </button>
+                            <button id="btnCancelPerfil" class="btn btn-danger hidden" style="width: 100%; justify-content: center;">
+                                <i class="fa-solid fa-xmark"></i> Cancelar
+                            </button>
+                            
+                            <div class="form-group hidden" id="divFechaSalida" style="width: 100%; margin-top: 10px;">
+                                <label style="color: var(--danger); text-align: center; width: 100%; display: block;">Fecha de Salida</label>
+                                <input type="date" id="fechaSalida" name="fechaSalida" class="warning-text" readonly style="text-align: center; background: #fff0f0; border-color: var(--danger);">
+                            </div>
+                        </div>
+                        
+                        <div class="info-column" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 300px;">
+                            
+                            <div class="form-row super-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
+                                <div class="form-group flex-2" style="min-width: 250px;">
+                                    <label>Nombre Completo</label>
+                                    <input type="text" id="nombre" name="nombre" required readonly>
+                                </div>
+                                <div class="form-group" style="flex: 0.5; min-width: 80px;">
+                                    <label>Edad</label>
+                                    <input type="number" id="edad" name="edad" readonly>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 150px;">
+                                    <label>Número de Socio</label>
+                                    <input type="text" id="numeroSocio" name="numeroSocio" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
+                                <div class="form-group flex-1" style="min-width: 150px;">
+                                    <label>Fecha de Nacimiento</label>
+                                    <input type="date" id="fechaNacimiento" name="fechaNacimiento" readonly>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 120px;">
+                                    <label>DNI</label>
+                                    <input type="text" id="dni" name="dni" readonly>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 120px;">
+                                    <label>CUIL</label>
+                                    <input type="text" id="cuil" name="cuil" readonly>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 150px;">
+                                    <label>Número de Trámite</label>
+                                    <input type="text" id="numeroTramite" name="numeroTramite" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 0;">
+                                <div class="form-group flex-1" style="min-width: 150px;">
+                                    <label>Fecha de Ingreso</label>
+                                    <input type="date" id="fechaIngreso" name="fechaIngreso" readonly>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 150px;">
+                                    <label>Nacionalidad</label>
+                                    <input type="text" id="nacionalidad" name="nacionalidad" readonly>
+                                </div>
+                                <div class="form-group flex-2" style="min-width: 250px;">
+                                    <label>Domicilio</label>
+                                    <input type="text" id="domicilio" name="domicilio" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="profile-section section-2">
+                    <h3><i class="fa-solid fa-notes-medical"></i> Información Médica y Cobertura</h3>
+                    
+                    <div class="form-row" style="flex-wrap: wrap; gap: 15px; justify-content: center; margin-bottom: 25px; border-bottom: 1px dashed var(--border-color); padding-bottom: 20px;">
+                        <div class="form-group flex-1" style="min-width: 200px; max-width: 300px;"><label>Lugar de Internación</label><input type="text" id="lugarInternacion" name="lugarInternacion" readonly></div>
+                        <div class="form-group flex-1" style="min-width: 200px; max-width: 300px;"><label>Alergias</label><input type="text" id="alergias" name="alergias" readonly></div>
+                        <div class="form-group flex-1" style="min-width: 200px; max-width: 300px;"><label>Médico de Cabecera</label><input type="text" id="medicoCabecera" name="medicoCabecera" readonly></div>
+                    </div>
+                    
+                    <div id="obrasSocialesContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+                        </div>
+                    
+                    <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                        <button type="button" id="btnAddOs" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Obra Social</button>
+                    </div>
+                </section>
+
+                <section class="profile-section section-4">
+                    <h3><i class="fa-solid fa-users"></i> Contacto Responsable</h3>
+                    
+                    <div id="responsablesContainer">
+                        </div>
+                    
+                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                        <button type="button" id="btnAddResponsable" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Responsable</button>
+                    </div>
+                </section>
+
+                <section class="profile-section section-5">
+                    <h3><i class="fa-brands fa-google-drive" style="color: #0F9D58;"></i> Archivos en la Nube (Google Drive)</h3>
+                    <div class="form-row" style="flex-wrap: wrap; gap: 15px;">
+                        <div class="form-group flex-1" style="min-width: 250px;">
+                            <label>Enlace o ID de la Carpeta del Residente</label>
+                            <input type="text" id="carpetaDrive" name="carpetaDrive" readonly placeholder="Pegar ID o enlace de la carpeta aquí...">
+                        </div>
+                        <div class="form-group flex-1" style="min-width: 250px;">
+                            <label>Enlace o ID de la Foto de Perfil manual</label>
+                            <input type="text" id="imagenDrive" name="imagenDrive" readonly placeholder="Pegar ID o enlace de la foto aquí...">
+                        </div>
+                    </div>
+                </section>
+            </div> 
+            
+            <div id="tab-documentacion" class="hidden tab-content-wrapper">
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; width: 100%;">
+                    <button id="btnEditDocs" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Editar Documentos</button>
+                    <button id="btnCancelDocs" class="btn btn-danger hidden"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                    <button id="btnSaveDocs" class="btn btn-success hidden"><i class="fa-solid fa-save"></i> Guardar Documentos</button>
+                </div>
+                
+                <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start; margin-top: 10px;">
+                    
+                    <div style="flex: 1; min-width: 350px;">
+                        <h3 style="color: var(--primary-blue); border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-top: 0;">
+                            <i class="fa-solid fa-id-card"></i> Documentación DNI
+                        </h3>
+                        
+                        <div id="visorDni"></div>
+                        
+                        <div class="docs-ids-box" style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid var(--primary-blue); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <h4 style="margin-top: 0; color: #333; margin-bottom: 15px;">IDs de Archivos DNI</h4>
+                            <div class="form-group">
+                                <label>Carpeta Drive Física (DNI)</label>
+                                <input type="text" id="carpetaDriveDni" name="carpetaDriveDni" readonly placeholder="Pegar ID de la carpeta...">
+                            </div>
+                            <div class="form-group">
+                                <label>ID Archivo Frente</label>
+                                <input type="text" id="dniArchivo1" name="dniArchivo1" readonly placeholder="Pegar ID de la imagen frente...">
+                            </div>
+                            <div class="form-group">
+                                <label>ID Archivo Dorso</label>
+                                <input type="text" id="dniArchivo2" name="dniArchivo2" readonly placeholder="Pegar ID de la imagen dorso...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1; min-width: 350px;">
+                        <h3 style="color: var(--primary-blue); border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-top: 0;">
+                            <i class="fa-solid fa-notes-medical"></i> Documentación Obra Social
+                        </h3>
+                        
+                        <div id="visorOs"></div>
+                        
+                        <div class="docs-ids-box" style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid var(--primary-blue); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <h4 style="margin-top: 0; color: #333; margin-bottom: 15px;">IDs de Archivos Obra Social</h4>
+                            <div class="form-group">
+                                <label>Carpeta Drive Física (Obra Social)</label>
+                                <input type="text" id="carpetaDriveOs" name="carpetaDriveOs" readonly placeholder="Pegar ID de la carpeta...">
+                            </div>
+                            <div class="form-group">
+                                <label>ID Credencial Frente</label>
+                                <input type="text" id="osArchivo1" name="osArchivo1" readonly placeholder="Pegar ID de la imagen frente...">
+                            </div>
+                            <div class="form-group">
+                                <label>ID Credencial Dorso</label>
+                                <input type="text" id="osArchivo2" name="osArchivo2" readonly placeholder="Pegar ID de la imagen dorso...">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            </div>
+    </main>
+
+    <script src="js/resident.js?v=2"></script>
+</body>
+</html>

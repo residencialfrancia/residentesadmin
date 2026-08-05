@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Residencial Francia - Archivo Digital</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header OBLIGATORIO: Azul institucional -->
+    <header class="main-header">
+        <div class="header-left">
+            <!-- AQUÍ ESTÁ LA CORRECCIÓN DE LA IMAGEN -->
+            <img src="img/logo.png" alt="Logo Residencial Francia" class="custom-logo">
+            <span class="logo-text">Residencial Francia</span>
+        </div>
+        <div class="header-right">
+            <h1>Panel Administrativo</h1>
+        </div>
+    </header>
+
+    <!-- BARRA DE PESTAÑAS (TABS) -->
+    <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="tab-activos"><i class="fa-solid fa-users"></i> Residentes Activos</button>
+        <button class="tab-btn" data-tab="tab-archivados"><i class="fa-solid fa-box-archive"></i> Archivados</button>
+        <button class="tab-btn" data-tab="tab-cumpleanos"><i class="fa-solid fa-cake-candles"></i> Cumpleaños</button>
+    </nav>
+
+    <main class="dashboard-container">
+        
+        <!-- PESTAÑA 1: ACTIVOS -->
+        <div id="tab-activos" class="tab-content active">
+            <!-- Controles: Buscador y Filtros -->
+            <section class="controls-section">
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="searchActivos" placeholder="Buscar por nombre o DNI...">
+                </div>
+                <div class="filter-box">
+                    <select id="osFilterActivos">
+                        <option value="">Todas las Obras Sociales</option>
+                        <!-- Llenado dinámico por JS -->
+                    </select>
+                    <button class="btn btn-primary" onclick="window.location.href='resident.html'"><i class="fa-solid fa-plus"></i> Nuevo Residente</button>
+                </div>
+            </section>
+
+            <!-- Spinner Loading -->
+            <div id="loaderActivos" class="loader-container">
+                <div class="spinner"></div>
+                <p>Cargando archivo de residentes...</p>
+            </div>
+
+            <!-- Cuadrícula de Residentes -->
+            <section class="grid-container" id="gridActivos">
+                <!-- Cards generadas por app.js -->
+            </section>
+        </div>
+
+        <!-- PESTAÑA 2: ARCHIVADOS -->
+        <div id="tab-archivados" class="tab-content hidden">
+            <section class="controls-section">
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="searchArchivados" placeholder="Buscar en archivo histórico...">
+                </div>
+            </section>
+            <div id="loaderArchivados" class="loader-container">
+                <div class="spinner"></div>
+                <p>Cargando residentes archivados...</p>
+            </div>
+            <section class="grid-container" id="gridArchivados">
+                <!-- Cards generadas por app.js -->
+            </section>
+        </div>
+
+        <!-- PESTAÑA 3: CUMPLEAÑOS -->
+        <div id="tab-cumpleanos" class="tab-content hidden">
+            <div class="calendar-wrapper">
+                <div class="calendar-header">
+                    <h2 id="calendarMonthTitle">Mes Actual</h2>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+                </div>
+                <div class="calendar-days" id="calendarDays">
+                    <!-- Los días se inyectan por JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal para Archivar -->
+    <div id="archiveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Archivar Residente</h2>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Indique la fecha de salida para mover a <strong id="archiveName"></strong> al archivo inactivo.</p>
+                <div class="form-group">
+                    <label>Fecha de Salida</label>
+                    <input type="date" id="archiveDate" class="modern-input">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelArchive">Cancelar</button>
+                <button class="btn btn-danger" id="confirmArchive">Archivar Residente</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
