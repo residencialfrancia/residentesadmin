@@ -1,8 +1,4 @@
-/**
- * APP.JS - Lógica de Dashboard Multitabs
- */
-
-const API_URL = 'https://script.google.com/macros/s/AKfycbzpHZgl9ZUD_NCVXR1qN45ohwiObhWgmpxgUzK883ySzC30LPRLrD3iFxKB1F22fcC3Qw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
 let globalActivos = [];
@@ -30,10 +26,6 @@ function setupTabs() {
             const targetId = btn.getAttribute('data-tab');
             document.getElementById(targetId).classList.remove('hidden');
             document.getElementById(targetId).classList.add('active');
-
-            if(targetId === 'tab-cumpleanos') {
-                renderCalendar(globalActivos);
-            }
         });
     });
 }
@@ -91,7 +83,6 @@ function renderGrid(data, containerId, isArchived) {
         card.className = `card ${isArchived ? 'archived-card' : ''}`;
         card.style.cursor = 'pointer'; 
         
-        // CORRECCIÓN: Detectar si apretamos Archivar o Restaurar
         card.onclick = function(e) {
             e.preventDefault(); e.stopPropagation(); 
             const actionBtn = e.target.closest('.btn-archive-card');
@@ -109,7 +100,6 @@ function renderGrid(data, containerId, isArchived) {
 
         const imgSrc = res.fotoUrl && res.fotoUrl !== '' ? res.fotoUrl : FALLBACK_IMAGE;
 
-        // CORRECCIÓN: Alternar entre el botón de Archivar y el de Restaurar
         const actionBtnHtml = !isArchived 
             ? `<button type="button" class="btn-archive-card" data-action="archive" title="Archivar Residente"><i class="fa-solid fa-box-archive"></i></button>` 
             : `<button type="button" class="btn-archive-card" data-action="restore" title="Restaurar Residente"><i class="fa-solid fa-box-open"></i></button>`;
@@ -161,78 +151,6 @@ function renderGrid(data, containerId, isArchived) {
         `;
         grid.appendChild(card);
     });
-}
-
-// ================= CALENDARIO DE CUMPLEAÑOS =================
-function renderCalendar(residentesActivos) {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth(); 
-    
-    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    document.getElementById('calendarMonthTitle').textContent = `${monthNames[month]} ${year}`;
-
-    const daysContainer = document.getElementById('calendarDays');
-    daysContainer.innerHTML = '';
-
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    for (let x = 0; x < firstDayIndex; x++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.className = 'day-cell empty';
-        daysContainer.appendChild(emptyCell);
-    }
-
-    const monthBirthdays = {};
-    residentesActivos.forEach(res => {
-        if(res.fechaNacimiento) {
-            let bMonth, bDay, bYear;
-            
-            if(res.fechaNacimiento.includes('/')) {
-                const parts = res.fechaNacimiento.split('/');
-                bDay = parseInt(parts[0], 10);
-                bMonth = parseInt(parts[1], 10) - 1;
-                bYear = parseInt(parts[2], 10);
-            } else if (res.fechaNacimiento.includes('-')) {
-                const parts = res.fechaNacimiento.split('-');
-                bYear = parseInt(parts[0], 10);
-                bMonth = parseInt(parts[1], 10) - 1;
-                bDay = parseInt(parts[2], 10);
-            } else {
-                const d = new Date(res.fechaNacimiento);
-                bDay = d.getDate();
-                bMonth = d.getMonth();
-                bYear = d.getFullYear();
-            }
-
-            if(bMonth === month) {
-                if(!monthBirthdays[bDay]) monthBirthdays[bDay] = [];
-                const edadQueCumple = year - bYear;
-                monthBirthdays[bDay].push({ nombre: res.nombre, edad: edadQueCumple });
-            }
-        }
-    });
-
-    for (let i = 1; i <= daysInMonth; i++) {
-        const dayCell = document.createElement('div');
-        dayCell.className = 'day-cell';
-        
-        if (i === today.getDate()) dayCell.classList.add('today');
-
-        let html = `<span class="day-number">${i}</span>`;
-        
-        if (monthBirthdays[i]) {
-            dayCell.classList.add('has-birthday');
-            monthBirthdays[i].forEach(person => {
-                const shortName = person.nombre.split(' ').slice(0,2).join(' ');
-                html += `<span class="birthday-item"><i class="fa-solid fa-cake-candles"></i> ${shortName} (${person.edad} años)</span>`;
-            });
-        }
-
-        dayCell.innerHTML = html;
-        daysContainer.appendChild(dayCell);
-    }
 }
 
 // ================= FILTROS Y EVENTOS =================
@@ -308,11 +226,9 @@ async function executeArchive() {
     finally { btn.disabled = false; btn.innerHTML = 'Archivar Residente'; }
 }
 
-// CORRECCIÓN: Función nueva para Restaurar al Residente
 async function executeRestore(nombre) {
     if (!confirm(`¿Estás seguro de que deseas restaurar a ${nombre} a la lista de residentes activos?`)) return;
 
-    // Usamos el loader de archivados para dar feedback visual
     const loader = document.getElementById('loaderArchivados');
     if (loader) loader.classList.remove('hidden');
 
@@ -326,7 +242,6 @@ async function executeRestore(nombre) {
         const result = await res.json();
 
         if (result.status === 'success') {
-            // Recargar ambas grillas, el frontend se encarga de reordenar alfabéticamente
             fetchActivos(); 
             fetchArchivados(); 
         } else {
