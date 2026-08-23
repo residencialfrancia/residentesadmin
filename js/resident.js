@@ -63,15 +63,23 @@ function showToast(message, isError = false) {
 }
 
 // [Descripción: Lógica de navegación entre las pestañas principales de la página (Perfil vs Documentación).]
+// [Descripción: Modificación de la función para usar las nuevas clases CSS "profile-tab" y "active", eliminando los cambios manuales de background color en Javascript.]
 window.switchProfileTab = function(tabName) {
-    const p = document.getElementById('tab-perfil'), d = document.getElementById('tab-documentacion');
-    const bp = document.getElementById('btnTabPerfil'), bd = document.getElementById('btnTabDocs');
+    const p = document.getElementById('tab-perfil');
+    const d = document.getElementById('tab-documentacion');
+    const bp = document.getElementById('btnTabPerfil');
+    const bd = document.getElementById('btnTabDocs');
+
     if (tabName === 'perfil') {
-        p.classList.remove('hidden'); d.classList.add('hidden');
-        bp.style.background = 'var(--primary-blue)'; bp.style.color = 'white'; bd.style.background = '#f0f4f8'; bd.style.color = '#333';
+        p.classList.remove('hidden'); 
+        d.classList.add('hidden');
+        bp.classList.add('active'); 
+        bd.classList.remove('active');
     } else {
-        p.classList.add('hidden'); d.classList.remove('hidden');
-        bd.style.background = 'var(--primary-blue)'; bd.style.color = 'white'; bp.style.background = '#f0f4f8'; bp.style.color = '#333';
+        p.classList.add('hidden'); 
+        d.classList.remove('hidden');
+        bd.classList.add('active'); 
+        bp.classList.remove('active');
     }
 }
 
@@ -359,7 +367,7 @@ function createOriginalViewerCard(title, fileId, inputId, icon) {
     `;
 }
 
-// [Descripción: Lógica que oculta las subpestañas vacías cuando el usuario solo está "mirando", pero las muestra todas si activa el modo Edición.]
+// [Descripción: Función actualizada para mostrar el mensaje vacío centrado. Si no hay botones activos y no estamos editando, muestra el contenedor "docsEmptyMsg" en modo Flex para centrarlo correctamente.]
 function updateDocsSidebarVisibility() {
     const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
     let firstVisible = null;
@@ -395,7 +403,7 @@ function updateDocsSidebarVisibility() {
             const panel = document.getElementById(`panel-doc-${secId}`);
             if (panel) panel.classList.add('hidden');
         });
-        emptyMsg.style.display = 'block';
+        emptyMsg.style.display = 'flex'; // Activamos el flexbox centrado
     }
 }
 
