@@ -1,4 +1,4 @@
-// [Descripción: Lógica del perfil del residente. Modificada para leer y guardar arrays múltiples: hasta 3 Médicos (con especialidad), 3 Obras Sociales (con número de dorso), y 5 Responsables (con parentesco). También genera dinámicamente hasta 20 visores de documentos requeridos en la pestaña Links.]
+// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando un residente existente o creando uno nuevo.]
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormEvents();
 });
 
-// [Descripción: Funciones utilitarias y de cálculo de edad en tiempo real]
+// [Descripción: Funciones utilitarias para el cálculo de edad en tiempo real, extracción segura de IDs de Google Drive, formateo de fechas y visualización de notificaciones (toast).]
 function calculateAgeLive() {
     const dateVal = document.getElementById('fechaNacimiento').value;
     const ageInput = document.getElementById('edad');
@@ -55,7 +55,27 @@ function formatToInputDate(sheetDate) {
     } catch { return sheetDate; }
 }
 
-// [Descripción: Carga inicial de datos desde el backend y mapeo a los nuevos arrays]
+function showToast(message, isError = false) {
+    const toast = document.getElementById('toast'); 
+    toast.textContent = message; 
+    toast.className = 'toast show ' + (isError ? 'error' : '');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// [Descripción: Lógica de navegación entre las pestañas principales de la página (Perfil vs Documentación).]
+window.switchProfileTab = function(tabName) {
+    const p = document.getElementById('tab-perfil'), d = document.getElementById('tab-documentacion');
+    const bp = document.getElementById('btnTabPerfil'), bd = document.getElementById('btnTabDocs');
+    if (tabName === 'perfil') {
+        p.classList.remove('hidden'); d.classList.add('hidden');
+        bp.style.background = 'var(--primary-blue)'; bp.style.color = 'white'; bd.style.background = '#f0f4f8'; bd.style.color = '#333';
+    } else {
+        p.classList.add('hidden'); d.classList.remove('hidden');
+        bd.style.background = 'var(--primary-blue)'; bd.style.color = 'white'; bp.style.background = '#f0f4f8'; bp.style.color = '#333';
+    }
+}
+
+// [Descripción: Carga los datos del residente desde el backend (Activos o Archivados) y los prepara para rellenar el formulario.]
 async function loadResidentData() {
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
@@ -85,7 +105,7 @@ async function loadResidentData() {
     }
 }
 
-// [Descripción: Pobla las cajas de texto y llama a los creadores de filas dinámicas (Médicos, OS, Familiares)]
+// [Descripción: Rellena los campos HTML del perfil con la información del residente y genera las filas dinámicas de Médicos, Obras Sociales y Responsables.]
 function populateForm(data) {
     document.getElementById('nombre').value = data.nombre || '';
     document.getElementById('apodo').value = data.apodo || '';
@@ -105,7 +125,7 @@ function populateForm(data) {
     // Llenar Médicos
     const medContainer = document.getElementById('medicosContainer');
     medContainer.innerHTML = '';
-    const medicos = data.medicosList || [data.medicoCabecera]; // Fallback por si backend manda 1
+    const medicos = data.medicosList || [data.medicoCabecera];
     const especialidades = data.especialidadList || [];
     if (medicos.length > 0 && medicos[0]) {
         medicos.forEach((med, i) => addMedicoRow(med, especialidades[i] || ''));
@@ -118,7 +138,7 @@ function populateForm(data) {
         data.obrasSociales.forEach((os, i) => addOsRow(os, data.numerosOs[i] || '', data.dorsosOs ? data.dorsosOs[i] : ''));
     } else { addOsRow('', '', ''); }
 
-    // Llenar Familiares
+    // Llenar Familiares Responsables
     const respContainer = document.getElementById('responsablesContainer');
     respContainer.innerHTML = '';
     if (data.responsablesList && data.responsablesList.length > 0 && data.responsablesList[0]) {
@@ -127,7 +147,7 @@ function populateForm(data) {
         });
     } else { addResponsableRow('', '', '', '', ''); }
 
-    // Estado Archivado
+    // Control de UI para Archivados
     const divSalida = document.getElementById('divFechaSalida');
     const inputSalida = document.getElementById('fechaSalida');
     const statusBadge = document.getElementById('statusBadge'); 
@@ -153,7 +173,7 @@ function populateForm(data) {
     renderDocumentViewers(data);
 }
 
-// [Descripción: Agrega dinámicamente un bloque HTML para 1 Médico (máximo 3)]
+// [Descripción: Funciones generadoras de filas HTML dinámicas para Médicos, Obras Sociales y Responsables.]
 function addMedicoRow(medValue, espValue) {
     const container = document.getElementById('medicosContainer');
     if(container.children.length >= 3) return showToast("Máximo 3 médicos permitidos.");
@@ -176,7 +196,6 @@ function addMedicoRow(medValue, espValue) {
     container.appendChild(row);
 }
 
-// [Descripción: Agrega dinámicamente un bloque HTML para 1 Obra Social (incluyendo Nro de Dorso, máximo 3)]
 function addOsRow(osValue, nroValue, dorsoValue) {
     const container = document.getElementById('obrasSocialesContainer');
     if(container.children.length >= 3) return showToast("Máximo 3 obras sociales permitidas.");
@@ -203,7 +222,6 @@ function addOsRow(osValue, nroValue, dorsoValue) {
     container.appendChild(row);
 }
 
-// [Descripción: Agrega dinámicamente un bloque HTML para 1 Familiar (incluyendo Parentesco, máximo 5)]
 function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
     const container = document.getElementById('responsablesContainer');
     if(container.children.length >= 5) return showToast("Máximo 5 responsables permitidos.");
@@ -235,82 +253,169 @@ function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
     container.appendChild(row);
 }
 
-// [Descripción: Genera los visores HTML para todos los documentos de la pestaña Links y llama a la API de Drive para cargar la imagen en Base64]
+// [Descripción: Configuración de la Barra Lateral y Paneles de Documentación. Construye las 9 subpestañas y les inyecta el Frente y el Dorso de cada tipo de archivo.]
 function renderDocumentViewers(data) {
-    const grid = document.getElementById('documentosGridContainer');
-    grid.innerHTML = ''; // Limpiar contenedor
-
-    // Configuración de los 18 IDs de Drive posibles en la pestaña "Links"
-    const docConfig = [
-        { title: 'DNI Residente - Frente', id: 'dniArchivo1', fileId: data.dniArchivo1 },
-        { title: 'DNI Residente - Dorso', id: 'dniArchivo2', fileId: data.dniArchivo2 },
-        { title: 'OS 1 - Frente', id: 'osFrente1', fileId: data.osFrente1 },
-        { title: 'OS 1 - Dorso', id: 'osDorso1', fileId: data.osDorso1 },
-        { title: 'OS 2 - Frente', id: 'osFrente2', fileId: data.osFrente2 },
-        { title: 'OS 2 - Dorso', id: 'osDorso2', fileId: data.osDorso2 },
-        { title: 'OS 3 - Frente', id: 'osFrente3', fileId: data.osFrente3 },
-        { title: 'OS 3 - Dorso', id: 'osDorso3', fileId: data.osDorso3 },
-        { title: 'Resp 1 DNI - Frente', id: 'respFrente1', fileId: data.respFrente1 },
-        { title: 'Resp 1 DNI - Dorso', id: 'respDorso1', fileId: data.respDorso1 },
-        { title: 'Resp 2 DNI - Frente', id: 'respFrente2', fileId: data.respFrente2 },
-        { title: 'Resp 2 DNI - Dorso', id: 'respDorso2', fileId: data.respDorso2 },
-        { title: 'Resp 3 DNI - Frente', id: 'respFrente3', fileId: data.respFrente3 },
-        { title: 'Resp 3 DNI - Dorso', id: 'respDorso3', fileId: data.respDorso3 },
-        { title: 'Resp 4 DNI - Frente', id: 'respFrente4', fileId: data.respFrente4 },
-        { title: 'Resp 4 DNI - Dorso', id: 'respDorso4', fileId: data.respDorso4 },
-        { title: 'Resp 5 DNI - Frente', id: 'respFrente5', fileId: data.respFrente5 },
-        { title: 'Resp 5 DNI - Dorso', id: 'respDorso5', fileId: data.respDorso5 }
+    const docSections = [
+        { id: 'dni', label: 'DNI Residente', icon: 'fa-id-card', f1: 'dniArchivo1', f2: 'dniArchivo2', t1: 'DNI Frente 1', t2: 'DNI Dorso 2' },
+        { id: 'os1', label: 'Obra Social 1', icon: 'fa-notes-medical', f1: 'osFrente1', f2: 'osDorso1', t1: 'Obra Social Frente 1', t2: 'Obra Social Dorso 1' },
+        { id: 'os2', label: 'Obra Social 2', icon: 'fa-notes-medical', f1: 'osFrente2', f2: 'osDorso2', t1: 'Obra Social Frente 2', t2: 'Obra Social Dorso 2' },
+        { id: 'os3', label: 'Obra Social 3', icon: 'fa-notes-medical', f1: 'osFrente3', f2: 'osDorso3', t1: 'Obra Social Frente 3', t2: 'Obra Social Dorso 3' },
+        { id: 'resp1', label: 'DNI Responsable 1', icon: 'fa-user-shield', f1: 'respFrente1', f2: 'respDorso1', t1: 'DNI Resp Frente 1', t2: 'DNI Resp Dorso 1' },
+        { id: 'resp2', label: 'DNI Responsable 2', icon: 'fa-user-shield', f1: 'respFrente2', f2: 'respDorso2', t1: 'DNI Resp Frente 2', t2: 'DNI Resp Dorso 2' },
+        { id: 'resp3', label: 'DNI Responsable 3', icon: 'fa-user-shield', f1: 'respFrente3', f2: 'respDorso3', t1: 'DNI Resp Frente 3', t2: 'DNI Resp Dorso 3' },
+        { id: 'resp4', label: 'DNI Responsable 4', icon: 'fa-user-shield', f1: 'respFrente4', f2: 'respDorso4', t1: 'DNI Resp Frente 4', t2: 'DNI Resp Dorso 4' },
+        { id: 'resp5', label: 'DNI Responsable 5', icon: 'fa-user-shield', f1: 'respFrente5', f2: 'respDorso5', t1: 'DNI Resp Frente 5', t2: 'DNI Resp Dorso 5' }
     ];
 
-    let html = '';
-    docConfig.forEach(doc => { html += createViewerCard(doc.title, doc.fileId, doc.id); });
-    grid.innerHTML = html;
+    const sidebar = document.getElementById('docsSidebar');
+    const content = document.getElementById('docsContent');
+    sidebar.innerHTML = '';
+    
+    Array.from(content.children).forEach(child => {
+        if(child.id !== 'docsEmptyMsg') child.remove();
+    });
 
-    // Ejecutar descargas Base64
-    docConfig.forEach(doc => { if(doc.fileId) loadDriveImageAsBase64(doc.fileId, doc.id); });
+    docSections.forEach((sec) => {
+        const val1 = data[sec.f1] || '';
+        const val2 = data[sec.f2] || '';
+
+        const btn = document.createElement('button');
+        btn.className = `docs-tab-btn`;
+        btn.id = `btn-doc-${sec.id}`;
+        btn.innerHTML = `<i class="fa-solid ${sec.icon}"></i> ${sec.label}`;
+        btn.onclick = (e) => { e.preventDefault(); switchDocSubTab(sec.id); };
+        sidebar.appendChild(btn);
+
+        const panel = document.createElement('div');
+        panel.className = 'doc-panel hidden';
+        panel.id = `panel-doc-${sec.id}`;
+        
+        panel.innerHTML = `
+            <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start;">
+                ${createOriginalViewerCard(sec.t1, val1, sec.f1, sec.icon)}
+                ${createOriginalViewerCard(sec.t2, val2, sec.f2, sec.icon)}
+            </div>
+            
+            <div class="docs-ids-box" style="background: white; padding: 20px; border-radius: 8px; margin-top: 25px; border-left: 4px solid var(--primary-blue); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="margin-top: 0; color: #333; margin-bottom: 15px;">Links o IDs de ${sec.label}</h4>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Frente</label>
+                    <input type="text" id="${sec.f1}" value="${val1}" class="doc-id-input" ${!isEditMode ? 'readonly' : ''} placeholder="Pegar ID o enlace de la imagen frente...">
+                </div>
+                <div class="form-group">
+                    <label>Dorso</label>
+                    <input type="text" id="${sec.f2}" value="${val2}" class="doc-id-input" ${!isEditMode ? 'readonly' : ''} placeholder="Pegar ID o enlace de la imagen dorso...">
+                </div>
+            </div>
+        `;
+        content.appendChild(panel);
+
+        if(val1) loadDriveImageAsBase64(val1, sec.f1);
+        if(val2) loadDriveImageAsBase64(val2, sec.f2);
+    });
+
+    updateDocsSidebarVisibility();
 }
 
-function createViewerCard(title, fileId, inputId) {
-    const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : '#';
+// [Descripción: Crea el diseño visual del visor grande individual para cada archivo, incluyendo el botón de carga manual y el de ver original.]
+function createOriginalViewerCard(title, fileId, inputId, icon) {
+    const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${extractDriveId(fileId)}` : '#';
     const hiddenClass = isEditMode && !isArchivedProfile ? '' : 'hidden'; 
+    
     return `
-        <div class="doc-viewer-card" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--primary-blue); font-size: 0.95rem;">${title}</h4>
-            <input type="hidden" id="${inputId}" value="${fileId || ''}">
-            <div id="container-${inputId}" style="position: relative; width: 100%; min-height: ${fileId ? '250px' : '150px'}; border: 1px solid #eee; background: #f9f9f9; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-                ${fileId ? `
-                    <div id="loader-${inputId}" style="text-align: center; color: var(--primary-blue);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>
-                    <img id="img-${inputId}" alt="${title}" style="width: 100%; height: auto; max-height: 400px; object-fit: contain; display: none;">
-                ` : `<p style="color:#ccc;"><i class="fa-solid fa-image fa-2x"></i></p>`}
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <label class="btn-upload-doc ${hiddenClass}" for="upload-${inputId}" style="background: #0F9D58; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;"><i class="fa-solid fa-upload"></i> Subir</label>
-                <input type="file" id="upload-${inputId}" accept="image/*,application/pdf" style="display: none;" onchange="handleDocumentUpload(this, '${inputId}')">
-                ${fileId ? `<a href="${downloadUrl}" target="_blank" style="background: var(--primary-blue); color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem;"><i class="fa-solid fa-download"></i> Ver Original</a>` : ''}
+        <div style="flex: 1; min-width: 350px;">
+            <h3 style="color: var(--primary-blue); border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-top: 0;">
+                <i class="fa-solid ${icon}"></i> ${title}
+            </h3>
+            
+            <div class="doc-viewer-card" style="background: var(--white); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm);">
+                <div id="container-${inputId}" style="position: relative; width: 100%; min-height: ${fileId ? '450px' : '250px'}; height: auto; border: 1px solid #eee; border-radius: 4px; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; padding: 15px;">
+                    ${fileId ? `
+                        <div id="loader-${inputId}" style="position: absolute; display: flex; flex-direction: column; align-items: center; color: var(--primary-blue);">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2.5em; margin-bottom: 10px;"></i>
+                            <span style="font-weight: bold;">Descargando...</span>
+                        </div>
+                        <img id="img-${inputId}" alt="${title}" style="width: 100%; height: auto; max-height: 750px; object-fit: contain; display: none;">
+                    ` : `
+                        <p style="text-align:center; color:#888; font-style:italic; padding:20px; margin: 0;"><i class="fa-solid fa-image" style="font-size: 3em; margin-bottom: 10px; color: #ccc;"></i><br>Sin documento</p>
+                    `}
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div>
+                        <label class="btn-upload-doc ${hiddenClass}" for="upload-${inputId}" style="background: #0F9D58; color: white; padding: 10px 18px; border-radius: 4px; font-size: 0.9em; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Cargar manual
+                        </label>
+                        <input type="file" id="upload-${inputId}" accept="image/*,application/pdf" style="display: none;" onchange="handleDocumentUpload(this, '${inputId}')">
+                    </div>
+                    ${fileId ? `
+                    <a href="${downloadUrl}" target="_blank" style="background: var(--primary-blue); color: white; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-size: 0.9em; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-download"></i> Ver Original
+                    </a>
+                    ` : ''}
+                </div>
             </div>
         </div>
     `;
 }
 
-async function loadDriveImageAsBase64(fileId, inputId) {
-    const imgElement = document.getElementById(`img-${inputId}`);
-    const loaderElement = document.getElementById(`loader-${inputId}`);
-    if (!imgElement || !loaderElement) return;
-    try {
-        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getFileBase64', payload: { fileId: extractDriveId(fileId) } }) });
-        const result = await res.json();
-        if (result.status === 'success') {
-            if (result.data.mimeType.includes('pdf')) {
-                loaderElement.innerHTML = `<i class="fa-solid fa-file-pdf fa-3x" style="color:#e74c3c;"></i><br><small>Es un PDF</small>`;
+// [Descripción: Lógica que oculta las subpestañas vacías cuando el usuario solo está "mirando", pero las muestra todas si activa el modo Edición.]
+function updateDocsSidebarVisibility() {
+    const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
+    let firstVisible = null;
+
+    sections.forEach(secId => {
+        const btn = document.getElementById(`btn-doc-${secId}`);
+        const panel = document.getElementById(`panel-doc-${secId}`);
+        if (!btn || !panel) return;
+
+        const inputs = panel.querySelectorAll('.doc-id-input');
+        let hasValue = false;
+        inputs.forEach(inp => { if (inp.value.trim() !== '') hasValue = true; });
+
+        if (isEditMode) {
+            btn.style.display = 'flex';
+            if (!firstVisible) firstVisible = secId;
+        } else {
+            if (hasValue) {
+                btn.style.display = 'flex';
+                if (!firstVisible) firstVisible = secId;
             } else {
-                imgElement.src = `data:${result.data.mimeType};base64,${result.data.base64}`;
-                imgElement.onload = () => { loaderElement.style.display = 'none'; imgElement.style.display = 'block'; };
+                btn.style.display = 'none';
             }
         }
-    } catch (e) { loaderElement.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:red;"></i>`; }
+    });
+
+    const emptyMsg = document.getElementById('docsEmptyMsg');
+    if (firstVisible) {
+        emptyMsg.style.display = 'none';
+        switchDocSubTab(firstVisible);
+    } else {
+        sections.forEach(secId => {
+            const panel = document.getElementById(`panel-doc-${secId}`);
+            if (panel) panel.classList.add('hidden');
+        });
+        emptyMsg.style.display = 'block';
+    }
 }
 
-// [Descripción: Modos de edición y recolección de los arrays para guardarlos en Google Sheets]
+// [Descripción: Cambia entre las subpestañas de la barra lateral de documentos al hacerles clic.]
+function switchDocSubTab(tabId) {
+    const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
+    sections.forEach(secId => {
+        const btn = document.getElementById(`btn-doc-${secId}`);
+        const panel = document.getElementById(`panel-doc-${secId}`);
+        if (btn) btn.classList.remove('active');
+        if (panel) panel.classList.add('hidden');
+    });
+
+    const activeBtn = document.getElementById(`btn-doc-${tabId}`);
+    const activePanel = document.getElementById(`panel-doc-${tabId}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    if (activePanel) activePanel.classList.remove('hidden');
+}
+
+// [Descripción: Manejo de los botones de "Editar", "Cancelar" y "Guardar". Activa o desactiva la edición en ambas pestañas principales.]
 function toggleEditMode(tab, enable) {
     if (isArchivedProfile) return showToast("Perfil archivado: Solo lectura.", true);
     isEditMode = enable;
@@ -337,6 +442,7 @@ function toggleEditMode(tab, enable) {
             document.getElementById('btnSaveDocs').classList.remove('hidden');
             document.getElementById('btnCancelDocs').classList.remove('hidden');
             document.querySelectorAll('.btn-upload-doc').forEach(btn => btn.classList.remove('hidden'));
+            updateDocsSidebarVisibility(); 
         }
     } else {
         document.getElementById('residentForm').classList.add('readonly-mode');
@@ -356,10 +462,12 @@ function toggleEditMode(tab, enable) {
             document.getElementById('btnSaveDocs').classList.add('hidden');
             document.getElementById('btnCancelDocs').classList.add('hidden');
             document.querySelectorAll('.btn-upload-doc').forEach(btn => btn.classList.add('hidden'));
+            updateDocsSidebarVisibility(); 
         }
     }
 }
 
+// [Descripción: Proceso final para guardar el residente. Sube las fotos y documentos a Drive (si hubo cambios) y envía el objeto completo JSON al backend para guardarse en Sheets.]
 async function saveResident(tab) {
     if(isArchivedProfile) return;
     const btnSave = tab === 'perfil' ? document.getElementById('btnSavePerfil') : document.getElementById('btnSaveDocs');
@@ -378,13 +486,17 @@ async function saveResident(tab) {
             if(imgData.status === 'success') finalFotoUrl = imgData.data.url;
         }
 
-        // Subida de todos los documentos en cola
+        // Subida de documentos (Si el usuario adjuntó archivos manualmente)
         for (const [inputId, docData] of Object.entries(documentsToUpload)) {
             const docRes = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'uploadDocument', payload: { nombre: nombreInput, base64: docData.base64, mimeType: docData.mimeType, docType: inputId } }) });
             const docResult = await docRes.json();
-            if (docResult.status === 'success') document.getElementById(inputId).value = docResult.data.fileId;
+            if (docResult.status === 'success') {
+                const idInput = document.getElementById(inputId);
+                if(idInput) idInput.value = docResult.data.fileId;
+            }
         }
 
+        // Armado del JSON para el backend
         const residentData = {
             nombreViejo: currentResidentName, nombre: nombreInput, apodo: document.getElementById('apodo').value,
             numeroSocio: document.getElementById('numeroSocio').value, fechaNacimiento: document.getElementById('fechaNacimiento').value,
@@ -406,7 +518,7 @@ async function saveResident(tab) {
             telefonosList: Array.from(document.querySelectorAll('.resp-tel')).map(el => el.value.trim()),
             domicilioResponsablesList: Array.from(document.querySelectorAll('.resp-dom')).map(el => el.value.trim()),
 
-            // Extraemos los IDs de los inputs hidden generados en la pestaña Docs
+            // Extraemos los IDs de Google Drive. Usamos la función extractDriveId por si el usuario pegó el enlace web completo.
             dniArchivo1: extractDriveId(document.getElementById('dniArchivo1')?.value),
             dniArchivo2: extractDriveId(document.getElementById('dniArchivo2')?.value),
             osFrente1: extractDriveId(document.getElementById('osFrente1')?.value), osDorso1: extractDriveId(document.getElementById('osDorso1')?.value),
@@ -432,6 +544,38 @@ async function saveResident(tab) {
     finally { btnSave.disabled = false; loader.classList.add('hidden'); }
 }
 
+// [Descripción: API Call para obtener el Base64 de las imágenes de Drive.]
+async function loadDriveImageAsBase64(fileId, inputId) {
+    const imgElement = document.getElementById(`img-${inputId}`);
+    const loaderElement = document.getElementById(`loader-${inputId}`);
+    if (!imgElement || !loaderElement) return;
+    try {
+        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getFileBase64', payload: { fileId: extractDriveId(fileId) } }) });
+        const result = await res.json();
+        if (result.status === 'success') {
+            if (result.data.mimeType.includes('pdf')) {
+                loaderElement.innerHTML = `<i class="fa-solid fa-file-pdf fa-3x" style="color:#e74c3c;"></i><br><small>Es un PDF</small>`;
+            } else {
+                imgElement.src = `data:${result.data.mimeType};base64,${result.data.base64}`;
+                imgElement.onload = () => { loaderElement.style.display = 'none'; imgElement.style.display = 'block'; };
+            }
+        }
+    } catch (e) { loaderElement.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:red;"></i>`; }
+}
+
+// [Descripción: Lee el archivo desde la PC/Móvil del usuario, lo previsualiza temporalmente y lo pone en cola para ser enviado al darle a "Guardar".]
+window.handleDocumentUpload = function(input, id) {
+    const f = input.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+        documentsToUpload[id] = { base64: ev.target.result, mimeType: f.type };
+        const c = document.getElementById(`container-${id}`);
+        c.innerHTML = f.type.includes('pdf') ? `<p style="color: #0F9D58; font-weight: bold;"><i class="fa-solid fa-file-pdf fa-2x"></i><br>PDF Listo para guardar.</p>` : `<img src="${ev.target.result}" style="width:100%; max-height:400px; object-fit:contain;">`;
+        showToast("Archivo listo. Guarde los cambios.");
+    }; r.readAsDataURL(f);
+};
+
+// [Descripción: Asignación de listeners a botones y eventos]
 function setupFormEvents() {
     document.getElementById('btnEditPerfil').onclick = (e) => { e.preventDefault(); toggleEditMode('perfil', true); };
     document.getElementById('btnSavePerfil').onclick = (e) => { e.preventDefault(); saveResident('perfil'); };
@@ -439,9 +583,11 @@ function setupFormEvents() {
     document.getElementById('btnEditDocs').onclick = (e) => { e.preventDefault(); toggleEditMode('docs', true); };
     document.getElementById('btnSaveDocs').onclick = (e) => { e.preventDefault(); saveResident('docs'); };
     document.getElementById('btnCancelDocs').onclick = (e) => { e.preventDefault(); toggleEditMode('docs', false); loadResidentData(); };
+    
     document.getElementById('btnAddMedico').onclick = () => addMedicoRow('','');
     document.getElementById('btnAddOs').onclick = () => addOsRow('','','');
     document.getElementById('btnAddResponsable').onclick = () => addResponsableRow('','','','','');
+    
     document.getElementById('fechaNacimiento').addEventListener('change', calculateAgeLive);
     
     document.getElementById('imageUpload').addEventListener('change', function(e) {
@@ -453,31 +599,3 @@ function setupFormEvents() {
         }
     });
 }
-
-function showToast(message, isError = false) {
-    const toast = document.getElementById('toast'); toast.textContent = message; toast.className = 'toast show ' + (isError ? 'error' : '');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
-
-window.switchProfileTab = function(tabName) {
-    const p = document.getElementById('tab-perfil'), d = document.getElementById('tab-documentacion');
-    const bp = document.getElementById('btnTabPerfil'), bd = document.getElementById('btnTabDocs');
-    if (tabName === 'perfil') {
-        p.classList.remove('hidden'); d.classList.add('hidden');
-        bp.style.background = 'var(--primary-blue)'; bp.style.color = 'white'; bd.style.background = '#f0f4f8'; bd.style.color = '#333';
-    } else {
-        p.classList.add('hidden'); d.classList.remove('hidden');
-        bd.style.background = 'var(--primary-blue)'; bd.style.color = 'white'; bp.style.background = '#f0f4f8'; bp.style.color = '#333';
-    }
-}
-
-window.handleDocumentUpload = function(input, id) {
-    const f = input.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = ev => {
-        documentsToUpload[id] = { base64: ev.target.result, mimeType: f.type };
-        const c = document.getElementById(`container-${id}`);
-        c.innerHTML = f.type.includes('pdf') ? `<p>PDF Preparado.</p>` : `<img src="${ev.target.result}" style="width:100%; max-height:400px; object-fit:contain;">`;
-        showToast("Archivo listo. Guarde los cambios.");
-    }; r.readAsDataURL(f);
-};
