@@ -1,3 +1,4 @@
+// [Descripción: Variables globales e inicialización. Recuerda pegar aquí tu URL de la Nueva Implementación de Apps Script.]
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
@@ -11,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
 });
 
-// ================= NAVEGACIÓN DE TABS =================
+// [Descripción: Lógica de navegación entre las pestañas "Residentes Activos" y "Archivados".]
 function setupTabs() {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -30,24 +31,29 @@ function setupTabs() {
     });
 }
 
-// ================= FETCH DATOS =================
+// [Descripción: Funciones Fetch actualizadas con alertas (alert) para mostrar errores exactos si el backend de Google falla por falta de permisos, IDs incorrectos o URLs viejas.]
 async function fetchActivos() {
     const loader = document.getElementById('loaderActivos');
     loader.classList.remove('hidden');
     try {
         const res = await fetch(`${API_URL}?action=getResidents`);
         const json = await res.json();
+        
         if (json.status === 'success') {
             globalActivos = json.data;
-            
-            // ORDEN ALFABÉTICO (A-Z) DE ACTIVOS
             globalActivos.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
             populateFilters(globalActivos);
             renderGrid(globalActivos, 'gridActivos', false);
+        } else {
+            console.error("Error del Servidor (Activos):", json.message);
+            alert("Error de Apps Script al cargar ACTIVOS:\n" + json.message);
         }
-    } catch (e) { alert('Error cargando activos.'); } 
-    finally { loader.classList.add('hidden'); }
+    } catch (e) { 
+        console.error("Error de Red:", e);
+        alert('Error de conexión. Revisa que el API_URL sea el correcto de la Nueva Implementación.'); 
+    } finally { 
+        loader.classList.add('hidden'); 
+    }
 }
 
 async function fetchArchivados() {
@@ -56,19 +62,23 @@ async function fetchArchivados() {
     try {
         const res = await fetch(`${API_URL}?action=getArchived`);
         const json = await res.json();
+        
         if (json.status === 'success') {
             globalArchivados = json.data;
-
-            // ORDEN ALFABÉTICO (A-Z) DE ARCHIVADOS
             globalArchivados.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
             renderGrid(globalArchivados, 'gridArchivados', true);
+        } else {
+            console.error("Error del Servidor (Archivados):", json.message);
+            alert("Error de Apps Script al cargar ARCHIVADOS:\n" + json.message);
         }
-    } catch (e) { console.error(e); } 
-    finally { loader.classList.add('hidden'); }
+    } catch (e) { 
+        console.error("Error de Red:", e);
+    } finally { 
+        loader.classList.add('hidden'); 
+    }
 }
 
-// ================= RENDER DE TARJETAS =================
+// [Descripción: Generador de tarjetas visuales en el Dashboard para activos y archivados. Controla los clics para ir al perfil o ejecutar acciones de archivo/restauración.]
 function renderGrid(data, containerId, isArchived) {
     const grid = document.getElementById(containerId);
     grid.innerHTML = '';
@@ -153,7 +163,7 @@ function renderGrid(data, containerId, isArchived) {
     });
 }
 
-// ================= FILTROS Y EVENTOS =================
+// [Descripción: Lógica de buscadores, filtrado por Obra Social y eventos de los botones del modal.]
 function populateFilters(data) {
     const select = document.getElementById('osFilterActivos');
     const osSet = new Set();
@@ -192,7 +202,7 @@ function setupEventListeners() {
     document.getElementById('confirmArchive').onclick = executeArchive;
 }
 
-// ================= LÓGICA ARCHIVAR / RESTAURAR =================
+// [Descripción: Funciones que gestionan la apertura del Modal, el botón "Archivar Residente" y el botón "Restaurar" directo desde las tarjetas.]
 let residentToArchive = null;
 
 window.openArchiveModal = function(nombre) {
@@ -220,7 +230,7 @@ async function executeArchive() {
         if(result.status === 'success') {
             closeArchiveModal();
             fetchActivos(); 
-            fetchArchivados(); // Recargar ambos
+            fetchArchivados(); 
         }
     } catch (e) { alert("Error al archivar"); } 
     finally { btn.disabled = false; btn.innerHTML = 'Archivar Residente'; }
@@ -233,11 +243,7 @@ async function executeRestore(nombre) {
     if (loader) loader.classList.remove('hidden');
 
     try {
-        const postData = {
-            action: 'restoreResident',
-            payload: { nombre: nombre }
-        };
-
+        const postData = { action: 'restoreResident', payload: { nombre: nombre } };
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(postData) });
         const result = await res.json();
 
