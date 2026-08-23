@@ -98,13 +98,31 @@ select { padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 
 .upload-overlay input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .info-column { flex: 1; min-width: 300px; }
 
-/* FORMS */
+/* [Descripción: Ajuste de estética para los formularios del Perfil. Se forzó a los títulos (labels) a mantenerse en una sola línea (nowrap), se redujo sutilmente su tamaño para que entren perfectos, y se ajustó el padding de los inputs para que textos largos como el CUIL o DNI no queden tapados.] */
 .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
 .form-group { display: flex; flex-direction: column; flex: 1; min-width: 150px; }
 .flex-2 { flex: 2; }
 .full-width { flex: 100%; }
-.form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 5px; text-transform: uppercase; }
-.form-group input { padding: 0.8rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; transition: var(--transition); background: var(--white); outline: none; }
+.form-group label { 
+    font-size: 0.75rem; /* Tamaño reducido sutilmente */
+    color: var(--text-muted); 
+    font-weight: 600; 
+    margin-bottom: 5px; 
+    text-transform: uppercase; 
+    white-space: nowrap; /* Evita que ocupe 2 renglones */
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+}
+.form-group input { 
+    padding: 0.6rem; /* Reducimos el padding para dejar más espacio al texto */
+    border: 1px solid var(--border-color); 
+    border-radius: var(--radius-md); 
+    font-size: 1rem; 
+    transition: var(--transition); 
+    background: var(--white); 
+    outline: none; 
+    width: 100%; 
+}
 .form-group input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(10, 61, 145, 0.1); }
 
 /* AJUSTES DE TIPOGRAFÍA PARA EL HEADER DEL PERFIL */
