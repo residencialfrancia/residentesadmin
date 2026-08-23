@@ -1,4 +1,17 @@
-<!-- [Descripción: Estructura HTML actualizada con diseño minimalista. La barra de navegación es ahora un bloque compacto superior. El Nombre tiene una fila exclusiva (100% ancho) para que jamás se corte, al igual que los demás datos están mejor distribuidos. La sección de documentos incorpora la estructura para el centrado del mensaje vacío.] -->
+<!-- [Descripción: Estructura HTML completa del Perfil. Incluye la conexión al CSS y JS, el nuevo diseño de cabecera con botón de retroceso minimalista, la fila exclusiva para el Nombre, y el contenedor con barra lateral y centrado de la pestaña de Documentación.] -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Residente - Residencial Francia</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Fuentes e Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-light">
+
     <main class="profile-container">
         
         <!-- BARRA SUPERIOR INTEGRADA (Botón Volver + Pestañas + Badge) -->
@@ -47,7 +60,7 @@
                         
                         <div class="info-column" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 300px;">
                             
-                            <!-- FILA EXCLUSIVA PARA EL NOMBRE (NUNCA SE CORTA) -->
+                            <!-- FILA EXCLUSIVA PARA EL NOMBRE -->
                             <div class="form-row super-text" style="margin-bottom: 10px;">
                                 <div class="form-group full-width">
                                     <label>Nombre Completo</label>
@@ -155,10 +168,11 @@
                 </div>
                 
                 <div class="docs-layout">
+                    <!-- Barra Lateral -->
                     <div class="docs-sidebar" id="docsSidebar"></div>
                     
+                    <!-- Contenido Central -->
                     <div class="docs-content" id="docsContent">
-                        <!-- EL MENSAJE DE VACÍO AHORA USA LA CLASE CENTRADA -->
                         <div id="docsEmptyMsg" class="docs-empty-state" style="display:none;">
                             <i class="fa-regular fa-folder-open"></i>
                             <h3>No hay documentos registrados</h3>
@@ -169,3 +183,8 @@
             </div>
         </div>
     </main>
+
+    <!-- Conexión al archivo Javascript de la lógica del Perfil -->
+    <script src="js/resident.js"></script>
+</body>
+</html>
