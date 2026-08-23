@@ -1,21 +1,16 @@
-<!-- [Descripción: Estructura HTML de la ficha del residente sin barra superior (header). Incluye el botón de volver atrás, el nuevo campo "Apodo", y contenedores dinámicos vacíos para Médicos, Obras Sociales y Familiares que se llenarán por JS. En la pestaña de documentos se crea un único contenedor donde JS inyectará todas las tarjetas de Drive.] -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil de Residente - Residencial Francia</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-light">
-
+<!-- [Descripción: Estructura HTML actualizada con diseño minimalista. La barra de navegación es ahora un bloque compacto superior. El Nombre tiene una fila exclusiva (100% ancho) para que jamás se corte, al igual que los demás datos están mejor distribuidos. La sección de documentos incorpora la estructura para el centrado del mensaje vacío.] -->
     <main class="profile-container">
-        <!-- Botón Volver y Estado -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <a href="index.html" class="btn btn-secondary" style="text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Volver al Inicio</a>
-            <span id="statusBadge" style="display: none; font-weight: bold; font-size: 0.85rem;"></span>
+        
+        <!-- BARRA SUPERIOR INTEGRADA (Botón Volver + Pestañas + Badge) -->
+        <div class="profile-top-bar">
+            <a href="index.html" class="btn-back-sleek" title="Volver al Inicio"><i class="fa-solid fa-arrow-left"></i></a>
+            
+            <div class="profile-tabs-group">
+                <button type="button" id="btnTabPerfil" class="profile-tab active" onclick="switchProfileTab('perfil')">Información del Perfil</button>
+                <button type="button" id="btnTabDocs" class="profile-tab" onclick="switchProfileTab('docs')">Documentación</button>
+            </div>
+            
+            <span id="statusBadge" class="status-badge hidden">ARCHIVADO</span>
         </div>
 
         <div id="toast" class="toast"></div>
@@ -26,51 +21,41 @@
         </div>
 
         <div id="residentForm" class="profile-form readonly-mode">
-            
-            <!-- Botones de Pestañas Internas (Perfil / Documentos) -->
-            <div style="display: flex; gap: 10px; margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
-                <button type="button" id="btnTabPerfil" onclick="switchProfileTab('perfil')" style="padding: 12px 25px; cursor: pointer; border: none; background: var(--primary-blue); color: white; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 1.05em;">Información del Perfil</button>
-                <button type="button" id="btnTabDocs" onclick="switchProfileTab('docs')" style="padding: 12px 25px; cursor: pointer; border: 1px solid var(--border-color); border-bottom: none; background: #f0f4f8; color: #333; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 1.05em;">Documentación</button>
-            </div>
 
             <!-- PESTAÑA: INFO PERFIL -->
-            <div id="tab-perfil" class="tab-content-wrapper">
+            <div id="tab-perfil" class="tab-content-wrapper" style="background: transparent; padding: 0; box-shadow: none;">
                 
                 <section class="profile-section section-1">
-                    <div class="top-info-wrapper" style="display: flex; gap: 2rem; width: 100%; align-items: stretch; flex-wrap: wrap;">
+                    <div class="top-info-wrapper" style="display: flex; gap: 2rem; width: 100%; align-items: flex-start; flex-wrap: wrap;">
                         
-                        <div class="photo-column" style="display: flex; flex-direction: column; gap: 12px; align-items: center; width: 250px; flex-shrink: 0;">
+                        <div class="photo-column" style="display: flex; flex-direction: column; gap: 12px; align-items: center; width: 220px; flex-shrink: 0;">
                             <div class="photo-wrapper" style="margin-bottom: 5px; width: 100%; display: flex; justify-content: center;">
                                 <img id="profileImage" src="" alt="Foto Residente" onerror="this.src='https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'" style="max-width: 100%; height: auto; border-radius: 8px;">
                             </div>
-        
-                            <label id="btnUploadContainer" for="imageUpload" class="btn btn-outline hidden" style="width: 100%; justify-content: center; cursor: pointer;">
-                                <i class="fa-solid fa-upload"></i> Cargar Imagen
-                            </label>
+                            <label id="btnUploadContainer" for="imageUpload" class="btn btn-outline hidden" style="width: 100%; justify-content: center; cursor: pointer;"><i class="fa-solid fa-upload"></i> Cargar Imagen</label>
                             <input type="file" id="imageUpload" accept="image/*" style="display: none;">
 
-                            <button id="btnEditPerfil" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                                <i class="fa-solid fa-pen"></i> Editar Info Perfil
-                            </button>
-                            <button id="btnSavePerfil" class="btn btn-success hidden" style="width: 100%; justify-content: center;">
-                                <i class="fa-solid fa-save"></i> Guardar Perfil
-                            </button>
-                            <button id="btnCancelPerfil" class="btn btn-danger hidden" style="width: 100%; justify-content: center;">
-                                <i class="fa-solid fa-xmark"></i> Cancelar
-                            </button>
+                            <button id="btnEditPerfil" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fa-solid fa-pen"></i> Editar Info</button>
+                            <button id="btnSavePerfil" class="btn btn-success hidden" style="width: 100%; justify-content: center;"><i class="fa-solid fa-save"></i> Guardar</button>
+                            <button id="btnCancelPerfil" class="btn btn-danger hidden" style="width: 100%; justify-content: center;"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+                            
                             <div class="form-group hidden" id="divFechaSalida" style="width: 100%; margin-top: 10px;">
                                 <label style="color: var(--danger); text-align: center; width: 100%; display: block;">Fecha de Salida</label>
-                                <input type="date" id="fechaSalida" name="fechaSalida" class="warning-text" readonly style="text-align: center; background: #fff0f0; border-color: var(--danger);">
+                                <input type="date" id="fechaSalida" name="fechaSalida" class="warning-text" readonly style="text-align: center;">
                             </div>
                         </div>
                         
                         <div class="info-column" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 300px;">
                             
-                            <div class="form-row super-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
-                                <div class="form-group flex-2" style="min-width: 250px;">
+                            <!-- FILA EXCLUSIVA PARA EL NOMBRE (NUNCA SE CORTA) -->
+                            <div class="form-row super-text" style="margin-bottom: 10px;">
+                                <div class="form-group full-width">
                                     <label>Nombre Completo</label>
                                     <input type="text" id="nombre" name="nombre" required readonly>
                                 </div>
+                            </div>
+
+                            <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
                                 <div class="form-group flex-1" style="min-width: 150px;">
                                     <label>Apodo</label>
                                     <input type="text" id="apodo" name="apodo" readonly>
@@ -81,10 +66,9 @@
                                 </div>
                             </div>
 
-                           <!-- [Descripción: Reestructuración de la fila de datos principales (Nacimiento, Edad, DNI, CUIL, Trámite). Se aumentaron los min-width del CUIL y del DNI para asegurar que los números no se corten visualmente en pantallas pequeñas.] -->
                             <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
                                 <div class="form-group flex-1" style="min-width: 140px;">
-                                    <label>Fecha de Nacimiento</label>
+                                    <label>Fecha Nacimiento</label>
                                     <input type="date" id="fechaNacimiento" name="fechaNacimiento" readonly>
                                 </div>
                                 <div class="form-group" style="flex: 0.5; min-width: 60px;">
@@ -100,14 +84,14 @@
                                     <input type="text" id="cuil" name="cuil" readonly>
                                 </div>
                                 <div class="form-group flex-1" style="min-width: 150px;">
-                                    <label>Número de Trámite</label>
+                                    <label>N° Trámite</label>
                                     <input type="text" id="numeroTramite" name="numeroTramite" readonly>
                                 </div>
                             </div>
 
                             <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 0;">
                                 <div class="form-group flex-1" style="min-width: 150px;">
-                                    <label>Fecha de Ingreso</label>
+                                    <label>Fecha Ingreso</label>
                                     <input type="date" id="fechaIngreso" name="fechaIngreso" readonly>
                                 </div>
                                 <div class="form-group flex-1" style="min-width: 150px;">
@@ -123,53 +107,47 @@
                     </div>
                 </section>
 
-                <!-- SECCIÓN: DATOS MÉDICOS -->
                 <section class="profile-section section-2">
                     <h3><i class="fa-solid fa-user-doctor"></i> Datos Médicos</h3>
                     <div class="form-row" style="flex-wrap: wrap; gap: 15px; justify-content: center; margin-bottom: 25px; border-bottom: 1px dashed var(--border-color); padding-bottom: 20px;">
                         <div class="form-group flex-1" style="min-width: 200px;"><label>Lugar de Internación</label><input type="text" id="lugarInternacion" name="lugarInternacion" readonly></div>
                         <div class="form-group flex-1" style="min-width: 200px;"><label>Alergias</label><input type="text" id="alergias" name="alergias" readonly></div>
                     </div>
-                    
-                    <h4 style="margin-bottom: 15px; color: var(--text-main);">Médicos de Cabecera (Máx 3)</h4>
                     <div id="medicosContainer" style="display: flex; flex-direction: column; gap: 15px;"></div>
                     <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
                         <button type="button" id="btnAddMedico" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Médico</button>
                     </div>
                 </section>
 
-                <!-- SECCIÓN: OBRA SOCIAL -->
                 <section class="profile-section section-3">
                     <h3><i class="fa-solid fa-notes-medical"></i> Obra Social</h3>
                     <div id="obrasSocialesContainer" style="display: flex; flex-direction: column; gap: 15px;"></div>
                     <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                        <button type="button" id="btnAddOs" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Obra Social (Máx 3)</button>
+                        <button type="button" id="btnAddOs" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Obra Social</button>
                     </div>
                 </section>
 
-                <!-- SECCIÓN: FAMILIARES RESPONSABLES -->
                 <section class="profile-section section-4">
                     <h3><i class="fa-solid fa-users"></i> Familiares Responsables</h3>
                     <div id="responsablesContainer"></div>
                     <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-                        <button type="button" id="btnAddResponsable" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Responsable (Máx 5)</button>
+                        <button type="button" id="btnAddResponsable" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Responsable</button>
                     </div>
                 </section>
 
-                <!-- SECCIÓN: DRIVE GLOBAL -->
                 <section class="profile-section section-5">
-                    <h3><i class="fa-brands fa-google-drive" style="color: #0F9D58;"></i> Carpeta Nube (Google Drive)</h3>
+                    <h3><i class="fa-brands fa-google-drive" style="color: #0F9D58;"></i> Sistema de Archivos</h3>
                     <div class="form-row" style="flex-wrap: wrap; gap: 15px;">
                         <div class="form-group flex-1" style="min-width: 250px;">
                             <label>ID de la Carpeta del Residente</label>
-                            <input type="text" id="carpetaDrive" name="carpetaDrive" readonly placeholder="Carpeta principal...">
+                            <input type="text" id="carpetaDrive" name="carpetaDrive" readonly>
                         </div>
                     </div>
                 </section>
             </div> 
             
-            <!-- [Descripción: Pestaña de Documentación actualizada. Se eliminó la grilla CSS y se integró un contenedor dividido en dos: la barra lateral (docsSidebar) a la izquierda y el contenido (docsContent) a la derecha. JavaScript inyectará dinámicamente los botones y los visores aquí.] -->
-            <div id="tab-documentacion" class="hidden tab-content-wrapper">
+            <!-- PESTAÑA: DOCUMENTACIÓN -->
+            <div id="tab-documentacion" class="hidden tab-content-wrapper" style="background: transparent; padding: 0; box-shadow: none;">
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; width: 100%;">
                     <button id="btnEditDocs" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Editar Documentos</button>
                     <button id="btnCancelDocs" class="btn btn-danger hidden"><i class="fa-solid fa-xmark"></i> Cancelar</button>
@@ -177,20 +155,17 @@
                 </div>
                 
                 <div class="docs-layout">
-                    <div class="docs-sidebar" id="docsSidebar">
-                        <!-- JS inyectará las subpestañas aquí -->
-                    </div>
+                    <div class="docs-sidebar" id="docsSidebar"></div>
                     
                     <div class="docs-content" id="docsContent">
-                        <!-- JS inyectará los visores grandes aquí -->
-                        <p id="docsEmptyMsg" style="text-align:center; color:white; font-size: 1.2rem; font-style:italic; padding:40px; display:none;">
-                            No hay documentos registrados.<br>Presione "Editar Documentos" para añadir nuevos archivos.
-                        </p>
+                        <!-- EL MENSAJE DE VACÍO AHORA USA LA CLASE CENTRADA -->
+                        <div id="docsEmptyMsg" class="docs-empty-state" style="display:none;">
+                            <i class="fa-regular fa-folder-open"></i>
+                            <h3>No hay documentos registrados</h3>
+                            <p style="margin-top: 5px;">Presione "Editar Documentos" para añadir nuevos archivos.</p>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
     </main>
-
-    <script src="js/resident.js"></script>
-</body>
-</html>
