@@ -77,7 +77,13 @@ select { padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 
 .status-badge { background: var(--danger); color: white; padding: 8px 16px; border-radius: var(--radius-lg); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; }
 
 /* ======== SECCIONES Y ESTRUCTURA DEL PERFIL ======== */
-.tab-content-wrapper { margin-bottom: 30px; }
+.tab-content-wrapper { 
+    background-color: var(--primary-blue); /* Fondo azul institucional restaurado */
+    padding: 25px;
+    border-radius: var(--radius-lg); 
+    box-shadow: var(--shadow-md);
+    margin-bottom: 30px; 
+}
 .profile-section { background: var(--white); border-radius: var(--radius-md); padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
 .profile-section h3 { margin-bottom: 1.5rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
 .section-1 { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; }
@@ -93,8 +99,26 @@ select { padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 
 .form-group { display: flex; flex-direction: column; flex: 1; min-width: 150px; }
 .flex-2 { flex: 2; }
 .full-width { flex: 100%; }
-.form-group label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 2px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.form-group input { padding: 0.6rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; transition: var(--transition); background: var(--white); outline: none; width: 100%; }
+.form-group label { 
+    font-size: 0.75rem; 
+    color: var(--text-muted); 
+    font-weight: 600; 
+    margin-bottom: 2px; 
+    text-transform: uppercase; 
+    white-space: nowrap; /* Evita que ocupe 2 renglones */
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+}
+.form-group input { 
+    padding: 0.6rem; /* Padding reducido para evitar recortes de texto */
+    border: 1px solid var(--border-color); 
+    border-radius: var(--radius-md); 
+    font-size: 1rem; 
+    transition: var(--transition); 
+    background: var(--white); 
+    outline: none; 
+    width: 100%; 
+}
 .form-group input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(10, 61, 145, 0.1); }
 
 /* Ajustes Visuales Solo-Lectura */
@@ -151,7 +175,7 @@ select { padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 
 @media (max-width: 768px) {
     .section-1 { flex-direction: column; align-items: center; }
     .photo-column { flex: 0 0 auto; width: 100%; max-width: 300px; }
-    .tab-content-wrapper { padding: 15px; border-radius: 0; }
+    .tab-content-wrapper { padding: 15px; border-radius: var(--radius-md); }
     .profile-section { padding: 15px; }
     
     .docs-layout { flex-direction: column; }
