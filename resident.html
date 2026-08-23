@@ -168,18 +168,27 @@
                 </section>
             </div> 
             
-            <!-- PESTAÑA: DOCUMENTACIÓN (LINKS) -->
+            <!-- [Descripción: Pestaña de Documentación actualizada. Se eliminó la grilla CSS y se integró un contenedor dividido en dos: la barra lateral (docsSidebar) a la izquierda y el contenido (docsContent) a la derecha. JavaScript inyectará dinámicamente los botones y los visores aquí.] -->
             <div id="tab-documentacion" class="hidden tab-content-wrapper">
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; width: 100%;">
                     <button id="btnEditDocs" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Editar Documentos</button>
                     <button id="btnCancelDocs" class="btn btn-danger hidden"><i class="fa-solid fa-xmark"></i> Cancelar</button>
-                    <button id="btnSaveDocs" class="btn btn-success hidden"><i class="fa-solid fa-save"></i> Guardar Documentos</button>
+                    <button id="btnSaveDocs" class="btn btn-success hidden"><i class="fa-solid fa-save"></i> Guardar Cambios</button>
                 </div>
                 
-                <!-- JS inyectará aquí los grids de documentos -->
-                <div id="documentosGridContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px;"></div>
+                <div class="docs-layout">
+                    <div class="docs-sidebar" id="docsSidebar">
+                        <!-- JS inyectará las subpestañas aquí -->
+                    </div>
+                    
+                    <div class="docs-content" id="docsContent">
+                        <!-- JS inyectará los visores grandes aquí -->
+                        <p id="docsEmptyMsg" style="text-align:center; color:white; font-size: 1.2rem; font-style:italic; padding:40px; display:none;">
+                            No hay documentos registrados.<br>Presione "Editar Documentos" para añadir nuevos archivos.
+                        </p>
+                    </div>
+                </div>
             </div>
-        </div>
     </main>
 
     <script src="js/resident.js"></script>
