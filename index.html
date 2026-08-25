@@ -17,39 +17,90 @@
         <button class="tab-btn" data-tab="tab-archivados"><i class="fa-solid fa-box-archive"></i> Archivados</button>
     </nav>
 
+    <!-- [Descripción: Dashboard principal actualizado. Se incorporó una barra de herramientas avanzada con opciones de vista (Mosaico/Lista), orden dinámico, selección de reportes y un botón de imprimir. Se agregó la cabecera oculta para impresión y la estructura de tabla (Lista) junto a la grilla de mosaicos. Además, se incluye el modal para crear filtros personalizados.] -->
     <main class="dashboard-container">
         
+        <!-- CABECERA EXCLUSIVA PARA IMPRESIÓN (Invisible en pantalla) -->
+        <div id="printHeader" class="print-header">
+            <h2 id="printTitle">Informe de Residentes</h2>
+            <!-- Logo en tamaño miniatura que se transformará a negro vía CSS -->
+            <img src="img/logo.png" alt="Logo" class="print-logo" onerror="this.style.display='none'">
+        </div>
+
         <!-- PESTAÑA 1: ACTIVOS -->
         <div id="tab-activos" class="tab-content active">
-            <!-- Controles: Buscador y Filtros -->
+            
+            <!-- BUSCADOR ORIGINAL -->
             <section class="controls-section">
                 <div class="search-box">
                     <i class="fa-solid fa-search"></i>
                     <input type="text" id="searchActivos" placeholder="Buscar por nombre o DNI...">
                 </div>
                 <div class="filter-box">
-                    <select id="osFilterActivos">
-                        <option value="">Todas las Obras Sociales</option>
-                        <!-- Llenado dinámico por JS -->
-                    </select>
                     <button class="btn btn-primary" onclick="window.location.href='resident.html'"><i class="fa-solid fa-plus"></i> Nuevo Residente</button>
                 </div>
             </section>
 
-            <!-- Spinner Loading -->
+            <!-- NUEVA BARRA DE HERRAMIENTAS AVANZADA (Filtros, Orden, Reportes, Impresión) -->
+            <section class="advanced-toolbar print-hide">
+                
+                <!-- 1. Vistas y Orden -->
+                <div class="toolbar-group">
+                    <button class="btn-icon active" id="btnViewGrid" title="Vista Mosaico"><i class="fa-solid fa-grip"></i></button>
+                    <button class="btn-icon" id="btnViewList" title="Vista Lista"><i class="fa-solid fa-list"></i></button>
+                    
+                    <span style="color: var(--text-muted); margin-left: 10px; font-size: 0.9rem;">Ordenar:</span>
+                    <select id="sortField">
+                        <option value="nombre">Alfabético</option>
+                        <option value="edad">Edad</option>
+                        <option value="genero">Género</option>
+                        <option value="numeroSocio">N° Socio</option>
+                        <option value="fechaIngreso">Fecha de Ingreso</option>
+                        <option value="obraSocial">Obra Social</option>
+                        <option value="medicoCabecera">Médico de Cabecera</option>
+                        <option value="nacionalidad">Nacionalidad</option>
+                    </select>
+                    
+                    <select id="sortDirection">
+                        <option value="asc">Ascendente (A-Z)</option>
+                        <option value="desc">Descendente (Z-A)</option>
+                    </select>
+                </div>
+
+                <!-- 2. Informes y Botón de Impresión -->
+                <div class="toolbar-group">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Informe:</span>
+                    <select id="reportPreset">
+                        <option value="default">1. Residentes (Por defecto)</option>
+                        <option value="cumple">2. Cumpleaños</option>
+                        <option value="os">3. Obra Social</option>
+                        <option value="fam">4. Familiares y Responsables</option>
+                        <!-- Los personalizados se inyectarán aquí -->
+                    </select>
+                    <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="openCustomReportModal()"><i class="fa-solid fa-plus"></i> Crear Filtro</button>
+                    
+                    <button class="btn btn-secondary" onclick="executePrint()" style="margin-left: 15px; background: #34495e;"><i class="fa-solid fa-print"></i> Imprimir</button>
+                </div>
+            </section>
+
             <div id="loaderActivos" class="loader-container">
-                <div class="spinner"></div>
-                <p>Cargando archivo de residentes...</p>
+                <div class="spinner"></div><p>Cargando base de datos...</p>
             </div>
 
-            <!-- Cuadrícula de Residentes -->
-            <section class="grid-container" id="gridActivos">
-                <!-- Cards generadas por app.js -->
+            <!-- VISTA MOSAICO -->
+            <section class="grid-container" id="gridActivos"></section>
+
+            <!-- VISTA LISTA (Inyectada por JS, solo visible al hacer clic en btnViewList o al imprimir) -->
+            <section class="list-container hidden" id="listActivos">
+                <table class="data-table">
+                    <thead id="listActivosHead"></thead>
+                    <tbody id="listActivosBody"></tbody>
+                </table>
             </section>
         </div>
 
         <!-- PESTAÑA 2: ARCHIVADOS -->
-        <div id="tab-archivados" class="tab-content hidden">
+        <div id="tab-archivados" class="tab-content hidden print-hide">
             <section class="controls-section">
                 <div class="search-box">
                     <i class="fa-solid fa-search"></i>
@@ -57,18 +108,39 @@
                 </div>
             </section>
             <div id="loaderArchivados" class="loader-container">
-                <div class="spinner"></div>
-                <p>Cargando residentes archivados...</p>
+                <div class="spinner"></div><p>Cargando residentes archivados...</p>
             </div>
-            <section class="grid-container" id="gridArchivados">
-                <!-- Cards generadas por app.js -->
-            </section>
+            <section class="grid-container" id="gridArchivados"></section>
         </div>
-
     </main>
 
-    <!-- Modal para Archivar -->
-    <div id="archiveModal" class="modal">
+    <!-- Modal para Crear Informe Personalizado -->
+    <div id="reportModal" class="modal print-hide">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Crear Informe Personalizado</h2>
+                <span class="close" onclick="closeCustomReportModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Título del Filtro / Informe</label>
+                    <input type="text" id="customReportTitle" placeholder="Ej: Ficha Médica Completa...">
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;">Seleccione las columnas que desea incluir:</p>
+                
+                <div class="columns-picker" id="columnsPickerContainer">
+                    <!-- JS inyectará los checkboxes aquí -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCustomReportModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveCustomReport()">Guardar y Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Archivar (Original) -->
+    <div id="archiveModal" class="modal print-hide">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Archivar Residente</h2>
