@@ -80,6 +80,30 @@
                                     <label>Fecha Nacimiento</label>
                                     <input type="date" id="fechaNacimiento" name="fechaNacimiento" readonly>
                                 </div>
+
+                                <!-- [Descripción: Agregado el campo Género. Se ubica en la fila de datos personales básicos, aprovechando el espacio junto a Nacionalidad o Fecha de Ingreso.] -->
+                            <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 0;">
+                                <div class="form-group flex-1" style="min-width: 150px;">
+                                    <label>Fecha Ingreso</label>
+                                    <input type="date" id="fechaIngreso" name="fechaIngreso" readonly>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 120px;">
+                                    <label>Género</label>
+                                    <select id="genero" name="genero" disabled style="padding: 0.6rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; width: 100%;">
+                                        <option value=""></option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 150px;">
+                                    <label>Nacionalidad</label>
+                                    <input type="text" id="nacionalidad" name="nacionalidad" readonly>
+                                </div>
+                                <div class="form-group flex-2" style="min-width: 250px;">
+                                    <label>Domicilio</label>
+                                    <input type="text" id="domicilio" name="domicilio" readonly>
+                                </div>
                                 <div class="form-group" style="flex: 0.5; min-width: 60px;">
                                     <label>Edad</label>
                                     <input type="number" id="edad" name="edad" readonly>
