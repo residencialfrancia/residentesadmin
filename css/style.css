@@ -501,18 +501,19 @@ body {
 /* ==========================================================================
    FORMULARIOS Y TIPOGRAFÍA MINIMALISTA
    ========================================================================== */
-.form-row { 
-    display: flex; 
-    gap: 15px; 
-    margin-bottom: 10px; 
-    flex-wrap: wrap; 
-}
+/* [Descripción: Reducción del margen inferior y permitir que el input crezca naturalmente si lo necesita, en lugar de acortar la letra.] */
+.form-row { display: flex; gap: 15px; margin-bottom: 5px; flex-wrap: wrap; }
+.form-group { display: flex; flex-direction: column; flex: 1; min-width: 150px; }
 
-.form-group { 
-    display: flex; 
-    flex-direction: column; 
-    flex: 1; 
-    min-width: 150px; 
+.form-group input, .form-group select { 
+    padding: 0.6rem; 
+    border: 1px solid var(--border-color); 
+    border-radius: var(--radius-md); 
+    font-size: 1rem; /* El tamaño de fuente ya NO bajará del 100% nativo */
+    transition: var(--transition); 
+    background: var(--white); 
+    outline: none; 
+    width: 100%; 
 }
 
 .flex-2 { flex: 2; }
