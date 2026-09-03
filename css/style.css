@@ -217,34 +217,51 @@ select { padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 
 
 .readonly-mode select { border-color: transparent !important; background: transparent !important; padding-left: 0; color: #1a252f; font-weight: 600; box-shadow: none !important; pointer-events: none; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
 
+/* [Descripción: Reglas estrictas de impresión. Se fuerza el tamaño A4 Portrait (Vertical). Se usa 'margin: 0' para borrar la URL del navegador. El body se configura con las medidas exactas de A4 (210mm x 297mm) usando flexbox. La tabla utiliza 'table-layout: auto' con un tamaño de fuente dinámico (clamp) que intenta ser lo más grande posible sin desbordar el contenedor, aprovechando cada milímetro de la hoja única.] */
 @media print {
-    /* Margen 0 elimina los encabezados/pies de página nativos del navegador (URL, Fecha) */
-    @page { size: A4 landscape; margin: 0; }
+    /* Margin 0 anula la URL y fechas predeterminadas del navegador */
+    @page { size: A4 portrait; margin: 0; }
     
     body { 
         margin: 0 !important; 
-        padding: 10mm 15mm !important; /* Padding interno para que no pegue en el borde */
-        height: 100vh !important; 
+        padding: 15mm !important; 
+        width: 210mm !important; 
+        height: 297mm !important; 
+        box-sizing: border-box !important;
+        background: white !important; 
         display: flex; 
         flex-direction: column; 
-        overflow: hidden; 
-        background: white !important; 
     }
     
+    /* Contenedores Flexibles para ocupar el alto total */
     .dashboard-container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; flex: 1; display: flex; flex-direction: column; }
     #tab-activos, #tab-archivados { flex: 1; display: flex !important; flex-direction: column; }
-    
     .list-container { flex: 1; display: flex; flex-direction: column; border: none !important; box-shadow: none !important; overflow: hidden !important; }
     
-    /* La tabla se expande para ocupar todo el alto y ancho restante de la hoja */
-    .data-table { flex: 1; width: 100% !important; height: 100% !important; border: 1px solid black; }
-    .data-table th, .data-table td { border: 1px solid black !important; padding: 6px !important; text-align: left; font-size: 11px !important; }
-    .data-table th { background: #eaeaea !important; color: black !important; font-weight: bold; }
-    
-    .print-header { display: flex !important; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; flex-shrink: 0; }
+    /* Encabezado limpio */
+    .print-header { display: flex !important; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; flex-shrink: 0; }
     .print-header h2 { margin: 0; font-size: 20px; color: black; text-transform: uppercase; font-weight: bold; }
-    .print-logo { width: auto; height: 40px; } /* Ajuste de logo para que quede pequeño y en la esquina */
+    .print-logo { width: auto; height: 45px; object-fit: contain; }
 
-    /* Ocultar UI de navegación */
+    /* Tabla maximizada para hoja vertical */
+    .data-table { 
+        width: 100% !important; 
+        border: 2px solid black; 
+        table-layout: auto; 
+        border-collapse: collapse;
+    }
+    
+    /* El tamaño de fuente usa clamp para intentar ser lo más grande posible (hasta 14px) pero capaz de achicarse a 9px si hay muchas columnas, evitando que la tabla se rompa o requiera 2 hojas */
+    .data-table th, .data-table td { 
+        border: 1px solid black !important; 
+        padding: 8px 6px !important; 
+        text-align: left; 
+        font-size: clamp(9px, 1.3vw, 14px) !important; 
+        word-wrap: break-word;
+    }
+    
+    .data-table th { background: #e0e0e0 !important; color: black !important; font-weight: bold; text-transform: uppercase; }
+
+    /* Ocultar UI que no debe imprimirse */
     .main-header, .tabs-nav, .controls-section, .advanced-toolbar, .modal, .toast, #gridActivos, #gridArchivados { display: none !important; }
 }
