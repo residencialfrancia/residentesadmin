@@ -317,17 +317,24 @@ function loadCustomReportsToDropdown() {
 }
 
 // ================= IMPRESIÓN =================
+// [Descripción: Función de impresión actualizada. Antes de invocar window.print(), calcula la fecha actual en formato local (Ej: 31/08/2026) y la inyecta en el encabezado de la hoja para compensar la eliminación de los márgenes nativos del navegador.]
 window.executePrint = function() {
-    // Forzamos la vista de Lista para asegurar que se imprima la tabla, independientemente de si la pantalla está en mosaico
+    // 1. Forzar vista de Lista
     const wasGrid = currentView === 'grid';
     if(wasGrid) {
         currentView = 'list';
         applyFiltersAndRender();
     }
     
+    // 2. Inyectar Fecha Actual en el Encabezado
+    const today = new Date();
+    const dateString = today.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('printDate').textContent = "Fecha de impresión: " + dateString;
+    
+    // 3. Imprimir
     window.print();
     
-    // Devolvemos a la vista original si estaba en mosaico
+    // 4. Restaurar vista original
     if(wasGrid) {
         currentView = 'grid';
         applyFiltersAndRender();
