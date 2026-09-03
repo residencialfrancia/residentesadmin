@@ -1,4 +1,4 @@
-// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando o creando un residente.]
+// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando o creando un residente. (¡Asegúrate de pegar el enlace de tu Nueva Implementación de Apps Script!)]
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormEvents();
 });
 
-// [Descripción: Funciones utilitarias para cálculo de edad en tiempo real, extracción de IDs de Drive, formato de fechas y traducción del género proveniente de Sheets.]
+// [Descripción: Funciones utilitarias (Cálculo de edad, extracción de IDs, Formateo de fechas, Traductor de Género y Notificaciones Toast).]
 function calculateAgeLive() {
     const dateVal = document.getElementById('fechaNacimiento').value;
     const ageInput = document.getElementById('edad');
@@ -81,7 +81,7 @@ function showToast(message, isError = false) {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// [Descripción: Lógica de navegación entre la pestaña del Perfil y la Documentación.]
+// [Descripción: Navegación visual entre la pestaña del Perfil y la de Documentación.]
 window.switchProfileTab = function(tabName) {
     const p = document.getElementById('tab-perfil');
     const d = document.getElementById('tab-documentacion');
@@ -101,7 +101,7 @@ window.switchProfileTab = function(tabName) {
     }
 }
 
-// [Descripción: Descarga los datos del residente desde Google Sheets (vía backend).]
+// [Descripción: Descarga el JSON con los datos del residente desde el Backend de Google Sheets.]
 async function loadResidentData() {
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
@@ -136,7 +136,7 @@ async function loadResidentData() {
     }
 }
 
-// [Descripción: Inyecta los datos del JSON en los campos del formulario HTML. Integra el Traductor de Género y reconstruye las filas dinámicas.]
+// [Descripción: Inyecta los datos del servidor en el HTML. Construye el selector de género y los bloques de Médicos y Obras Sociales.]
 function populateForm(data) {
     document.getElementById('nombre').value = data.nombre || '';
     document.getElementById('apodo').value = data.apodo || '';
@@ -157,7 +157,9 @@ function populateForm(data) {
     }
 
     const generoSel = document.getElementById('genero');
-    if (generoSel) generoSel.value = formatGenero(data.genero);
+    if (generoSel) {
+        generoSel.value = formatGenero(data.genero);
+    }
 
     // Llenar Médicos
     const medContainer = document.getElementById('medicosContainer');
@@ -225,24 +227,24 @@ function populateForm(data) {
     renderDocumentViewers(data);
 }
 
-// [Descripción: Creación de filas dinámicas HTML. Límite máximo establecido para Obras Sociales (3), Médicos (3) y Responsables (5).]
+// [Descripción: Generadores de filas de Médicos, Obras Sociales (modo compacto) y Responsables.]
 function addMedicoRow(medValue, espValue) {
     const container = document.getElementById('medicosContainer');
     if(container.children.length >= 3) return showToast("Máximo 3 médicos permitidos.");
     
     const row = document.createElement('div');
-    row.className = 'os-row'; 
+    row.className = 'compact-row'; 
     row.innerHTML = `
-        <div class="form-row" style="align-items: flex-end; width: 100%; margin-bottom: 0; gap: 15px;">
-            <div class="form-group flex-1">
+        <div class="form-row" style="align-items: flex-end; width: 100%; margin-bottom: 0; gap: 8px; flex-wrap: nowrap;">
+            <div class="form-group" style="flex: 2; min-width: 80px;">
                 <label>Nombre del Médico</label>
                 <input type="text" class="med-nombre" value="${medValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <div class="form-group flex-1">
+            <div class="form-group" style="flex: 1.5; min-width: 80px;">
                 <label>Especialidad</label>
                 <input type="text" class="med-esp" value="${espValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove();">
+            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.compact-row').remove();">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
@@ -255,22 +257,22 @@ function addOsRow(osValue, nroValue, dorsoValue) {
     if(container.children.length >= 3) return showToast("Máximo 3 obras sociales permitidas.");
     
     const row = document.createElement('div');
-    row.className = 'os-row'; 
+    row.className = 'compact-row'; 
     row.innerHTML = `
-        <div class="form-row" style="align-items: flex-end; width: 100%; margin-bottom: 0; gap: 15px;">
-            <div class="form-group flex-1">
+        <div class="form-row" style="align-items: flex-end; width: 100%; margin-bottom: 0; gap: 8px; flex-wrap: nowrap;">
+            <div class="form-group" style="flex: 2; min-width: 60px;">
                 <label>Obra Social</label>
                 <input type="text" class="os-name" value="${osValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <div class="form-group flex-1">
+            <div class="form-group" style="flex: 1.2; min-width: 60px;">
                 <label>N° Credencial</label>
                 <input type="text" class="os-number" value="${nroValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <div class="form-group flex-1">
+            <div class="form-group" style="flex: 1.2; min-width: 60px;">
                 <label>N° Dorso</label>
                 <input type="text" class="os-dorso" value="${dorsoValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove();">
+            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.compact-row').remove();">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
@@ -316,7 +318,7 @@ function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
     container.appendChild(row);
 }
 
-// [Descripción: Pestaña Documentos. Genera la barra lateral y los visores grandes inyectando las tarjetas de Google Drive dinámicamente.]
+// [Descripción: Configura la Pestaña Documentación inyectando la barra lateral y los visores gigantes para los 18 archivos.]
 function renderDocumentViewers(data) {
     const docSections = [
         { id: 'dni', label: 'DNI Residente', icon: 'fa-id-card', f1: 'dniArchivo1', f2: 'dniArchivo2', t1: 'DNI Frente 1', t2: 'DNI Dorso 2' },
@@ -345,6 +347,7 @@ function renderDocumentViewers(data) {
         const val1 = data[sec.f1] || '';
         const val2 = data[sec.f2] || '';
 
+        // Creación del Botón para la Barra Lateral
         const btn = document.createElement('button');
         btn.className = `docs-tab-btn`;
         btn.id = `btn-doc-${sec.id}`;
@@ -355,6 +358,7 @@ function renderDocumentViewers(data) {
         };
         sidebar.appendChild(btn);
 
+        // Creación del Panel (Tarjeta Frente y Tarjeta Dorso + Inputs ID)
         const panel = document.createElement('div');
         panel.className = 'doc-panel hidden';
         panel.id = `panel-doc-${sec.id}`;
@@ -386,7 +390,7 @@ function renderDocumentViewers(data) {
     updateDocsSidebarVisibility();
 }
 
-// [Descripción: Crea el diseño HTML interno de una tarjeta de Google Drive individual.]
+// [Descripción: Retorna el HTML puro de una Tarjeta Visor de Drive con su imagen/pdf renderizado.]
 function createOriginalViewerCard(title, fileId, inputId, icon) {
     const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${extractDriveId(fileId)}` : '#';
     const hiddenClass = isEditMode && !isArchivedProfile ? '' : 'hidden'; 
@@ -430,7 +434,7 @@ function createOriginalViewerCard(title, fileId, inputId, icon) {
     `;
 }
 
-// [Descripción: Oculta subpestañas vacías si se está en "modo lectura". Muestra el mensaje vacío si no existe ningún documento.]
+// [Descripción: Oculta la Barra Lateral si no hay ningún documento que mostrar y centra el Mensaje Vacío. Vuelve a mostrar la Barra si entras en modo Edición.]
 function updateDocsSidebarVisibility() {
     const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
     let firstVisible = null;
@@ -444,7 +448,9 @@ function updateDocsSidebarVisibility() {
         let hasValue = false;
         
         inputs.forEach(inp => { 
-            if (inp.value.trim() !== '') hasValue = true; 
+            if (inp.value.trim() !== '') {
+                hasValue = true; 
+            }
         });
 
         if (isEditMode) {
@@ -461,9 +467,11 @@ function updateDocsSidebarVisibility() {
     });
 
     const emptyMsg = document.getElementById('docsEmptyMsg');
+    const sidebar = document.getElementById('docsSidebar');
     
     if (firstVisible) {
         emptyMsg.style.display = 'none';
+        if (sidebar) sidebar.style.display = 'flex';
         switchDocSubTab(firstVisible);
     } else {
         sections.forEach(secId => {
@@ -471,10 +479,11 @@ function updateDocsSidebarVisibility() {
             if (panel) panel.classList.add('hidden');
         });
         emptyMsg.style.display = 'flex'; 
+        if (sidebar) sidebar.style.display = 'none'; 
     }
 }
 
-// [Descripción: Evento al hacer clic en las pestañas laterales para mostrar sus respectivos documentos.]
+// [Descripción: Lógica de alternado visual al hacer clic en un botón de la Barra Lateral.]
 function switchDocSubTab(tabId) {
     const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
     
@@ -493,7 +502,7 @@ function switchDocSubTab(tabId) {
     if (activePanel) activePanel.classList.remove('hidden');
 }
 
-// [Descripción: Controlador Global del Estado de Edición. Activa o desactiva la lectura/escritura de los inputs.]
+// [Descripción: Controlador central del Modo Edición. Activa o desactiva la lectura/escritura de los inputs y muestra los botones de guardar/cancelar correspondientes a la pestaña activa.]
 function toggleEditMode(tab, enable) {
     if (isArchivedProfile) {
         return showToast("Perfil archivado: Solo lectura.", true);
@@ -576,7 +585,7 @@ function toggleEditMode(tab, enable) {
     }
 }
 
-// [Descripción: Proceso de guardado. Sube imágenes a Drive, empaca todos los campos del HTML en un JSON masivo y se los envía al backend.]
+// [Descripción: Proceso de guardado. Sube imágenes manuales a Drive (si existen), extrae los 18 IDs posibles, empaca los arrays y los manda al backend en Google Sheets.]
 async function saveResident(tab) {
     if(isArchivedProfile) return;
     
@@ -594,7 +603,6 @@ async function saveResident(tab) {
     try {
         let finalFotoUrl = currentFotoUrl;
         
-        // Subida de imagen principal si hay una en cola
         if (base64ImageToUpload) {
             const imgRes = await fetch(API_URL, { 
                 method: 'POST', 
@@ -614,7 +622,6 @@ async function saveResident(tab) {
             }
         }
 
-        // Subida manual de documentos
         for (const [inputId, docData] of Object.entries(documentsToUpload)) {
             const docRes = await fetch(API_URL, { 
                 method: 'POST', 
@@ -639,7 +646,6 @@ async function saveResident(tab) {
             }
         }
 
-        // Armado del JSON Masivo
         const residentData = {
             nombreViejo: currentResidentName, 
             nombre: nombreInput, 
@@ -720,7 +726,7 @@ async function saveResident(tab) {
     }
 }
 
-// [Descripción: Función de restauración que se comunica con el Backend para devolver al residente a la lista de activos.]
+// [Descripción: Función de restauración que devuelve al residente archivado a la lista de activos.]
 async function restoreResidentProfile() {
     if (!confirm(`¿Estás seguro de que deseas restaurar a ${currentResidentName} a la lista de residentes activos?`)) return;
 
@@ -759,7 +765,7 @@ async function restoreResidentProfile() {
     }
 }
 
-// [Descripción: Petición a Drive para renderizar imágenes/PDFs extrayendo el Base64 puro.]
+// [Descripción: Llamada al backend para descargar la imagen en formato Base64 sin problemas de CORS.]
 async function loadDriveImageAsBase64(fileId, inputId) {
     const imgElement = document.getElementById(`img-${inputId}`);
     const loaderElement = document.getElementById(`loader-${inputId}`);
@@ -791,7 +797,7 @@ async function loadDriveImageAsBase64(fileId, inputId) {
     }
 }
 
-// [Descripción: Pone en cola un archivo seleccionado desde la PC del usuario y genera su previsualización.]
+// [Descripción: Visualización en vivo de archivos adjuntos antes de guardar.]
 window.handleDocumentUpload = function(input, id) {
     const f = input.files[0]; 
     if(!f) return;
@@ -812,7 +818,7 @@ window.handleDocumentUpload = function(input, id) {
     r.readAsDataURL(f);
 };
 
-// [Descripción: Conecta todos los clics y cambios de los elementos HTML con las funciones JavaScript.]
+// [Descripción: Interconexión de clics e inputs a sus respectivas funciones.]
 function setupFormEvents() {
     document.getElementById('btnEditPerfil').onclick = (e) => { e.preventDefault(); toggleEditMode('perfil', true); };
     document.getElementById('btnSavePerfil').onclick = (e) => { e.preventDefault(); saveResident('perfil'); };
