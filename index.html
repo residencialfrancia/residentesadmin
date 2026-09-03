@@ -1,3 +1,4 @@
+<!-- [Descripción: Estructura principal del Dashboard. Contiene la barra de herramientas avanzada (vistas, ordenamiento, informes y botón de impresión), las grillas de Activos y Archivados, y la cabecera oculta exclusiva para la impresión en A4 (que incluye la fecha dinámica y el logoimpresion.png).] -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -17,20 +18,22 @@
         <button class="tab-btn" data-tab="tab-archivados"><i class="fa-solid fa-box-archive"></i> Archivados</button>
     </nav>
 
-    <!-- [Descripción: Dashboard principal actualizado. Se incorporó una barra de herramientas avanzada con opciones de vista (Mosaico/Lista), orden dinámico, selección de reportes y un botón de imprimir. Se agregó la cabecera oculta para impresión y la estructura de tabla (Lista) junto a la grilla de mosaicos. Además, se incluye el modal para crear filtros personalizados.] -->
     <main class="dashboard-container">
         
-        <!-- CABECERA EXCLUSIVA PARA IMPRESIÓN (Invisible en pantalla) -->
+        <!-- CABECERA EXCLUSIVA PARA IMPRESIÓN (Invisible en pantalla, solo visible al imprimir) -->
         <div id="printHeader" class="print-header">
-            <h2 id="printTitle">Informe de Residentes</h2>
-            <!-- Logo en tamaño miniatura que se transformará a negro vía CSS -->
-            <img src="img/logo.png" alt="Logo" class="print-logo" onerror="this.style.display='none'">
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <h2 id="printTitle">Informe de Residentes</h2>
+                <span id="printDate" style="font-size: 12px; color: #333; font-weight: bold;"></span>
+            </div>
+            <!-- Logo exclusivo para impresión en blanco y negro -->
+            <img src="img/logoimpresion.png" alt="Logo" class="print-logo" onerror="this.style.display='none'">
         </div>
 
         <!-- PESTAÑA 1: ACTIVOS -->
         <div id="tab-activos" class="tab-content active">
             
-            <!-- BUSCADOR ORIGINAL -->
+            <!-- CONTROLES BÁSICOS (Buscador y Nuevo Residente) -->
             <section class="controls-section">
                 <div class="search-box">
                     <i class="fa-solid fa-search"></i>
@@ -41,7 +44,7 @@
                 </div>
             </section>
 
-            <!-- NUEVA BARRA DE HERRAMIENTAS AVANZADA (Filtros, Orden, Reportes, Impresión) -->
+            <!-- BARRA DE HERRAMIENTAS AVANZADA (Filtros, Orden, Reportes, Impresión) -->
             <section class="advanced-toolbar print-hide">
                 
                 <!-- 1. Vistas y Orden -->
@@ -75,7 +78,7 @@
                         <option value="cumple">2. Cumpleaños</option>
                         <option value="os">3. Obra Social</option>
                         <option value="fam">4. Familiares y Responsables</option>
-                        <!-- Los personalizados se inyectarán aquí -->
+                        <!-- Los reportes personalizados se inyectarán aquí por JS -->
                     </select>
                     <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="openCustomReportModal()"><i class="fa-solid fa-plus"></i> Crear Filtro</button>
                     
@@ -83,14 +86,15 @@
                 </div>
             </section>
 
+            <!-- Spinner Loading -->
             <div id="loaderActivos" class="loader-container">
                 <div class="spinner"></div><p>Cargando base de datos...</p>
             </div>
 
-            <!-- VISTA MOSAICO -->
+            <!-- VISTA MOSAICO (Tarjetas) -->
             <section class="grid-container" id="gridActivos"></section>
 
-            <!-- VISTA LISTA (Inyectada por JS, solo visible al hacer clic en btnViewList o al imprimir) -->
+            <!-- VISTA LISTA (Tabla, también usada para imprimir) -->
             <section class="list-container hidden" id="listActivos">
                 <table class="data-table">
                     <thead id="listActivosHead"></thead>
@@ -139,7 +143,7 @@
         </div>
     </div>
 
-    <!-- Modal para Archivar (Original) -->
+    <!-- Modal para Archivar Residente -->
     <div id="archiveModal" class="modal print-hide">
         <div class="modal-content">
             <div class="modal-header">
