@@ -346,10 +346,13 @@ body {
 .data-table tr { cursor: pointer; }
 .data-table tr:hover td { background-color: #eaf1f8; }
 
+/* [Descripción: Ajuste de la primera columna (contador). Se le asigna width: 1% y white-space: nowrap para forzar al navegador a que encoja esta columna al tamaño exacto de los números, dejando más espacio libre para el resto de datos de la tabla.] */
+.data-table th:first-child,
 .data-table td:first-child { 
     font-weight: bold; 
     color: var(--text-muted); 
-    width: 40px; 
+    width: 1%; 
+    white-space: nowrap; 
     text-align: center; 
 }
 
@@ -817,6 +820,13 @@ body {
     .data-table th { background: #e0e0e0 !important; color: black !important; border: 1px solid black !important; font-weight: bold; }
     .data-table td { border: 1px solid black !important; color: black !important; }
     .data-table tr { page-break-inside: avoid; }
+    /* [Descripción: Refuerzo estricto del ancho de la columna de enumeración al imprimir. Garantiza que el table-layout: fixed de la impresión no expanda la columna del hashtag (#).] */
+    .data-table th:first-child, 
+    .data-table td:first-child { 
+        width: 1% !important; 
+        white-space: nowrap !important; 
+        text-align: center !important; 
+    }
     
     /* Género Split impresión */
     .gender-split { flex-direction: row; display: flex; gap: 10px; }
