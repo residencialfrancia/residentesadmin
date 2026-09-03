@@ -1,4 +1,4 @@
-// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando un residente o creando uno nuevo.]
+// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando o creando un residente.]
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormEvents();
 });
 
-// [Descripción: Funciones utilitarias para cálculo de edad en tiempo real, extracción de IDs de Drive, y notificaciones flotantes.]
+// [Descripción: Funciones utilitarias para cálculo de edad en tiempo real, extracción de IDs de Drive, formato de fechas y traducción del género proveniente de Sheets.]
 function calculateAgeLive() {
     const dateVal = document.getElementById('fechaNacimiento').value;
     const ageInput = document.getElementById('edad');
@@ -66,6 +66,14 @@ function formatToInputDate(sheetDate) {
     }
 }
 
+function formatGenero(g) {
+    if(!g) return '';
+    let lg = g.toLowerCase().trim();
+    if(lg.startsWith('m')) return 'Masculino';
+    if(lg.startsWith('f')) return 'Femenino';
+    return g;
+}
+
 function showToast(message, isError = false) {
     const toast = document.getElementById('toast'); 
     toast.textContent = message; 
@@ -93,7 +101,7 @@ window.switchProfileTab = function(tabName) {
     }
 }
 
-// [Descripción: Descarga los datos del residente desde Google Sheets consultando al backend.]
+// [Descripción: Descarga los datos del residente desde Google Sheets (vía backend).]
 async function loadResidentData() {
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
@@ -128,7 +136,7 @@ async function loadResidentData() {
     }
 }
 
-// [Descripción: Inyecta los datos del JSON en los campos del formulario HTML y reconstruye todas las filas de arrays.]
+// [Descripción: Inyecta los datos del JSON en los campos del formulario HTML. Integra el Traductor de Género y reconstruye las filas dinámicas.]
 function populateForm(data) {
     document.getElementById('nombre').value = data.nombre || '';
     document.getElementById('apodo').value = data.apodo || '';
@@ -142,12 +150,14 @@ function populateForm(data) {
     document.getElementById('alergias').value = data.alergias || '';
     document.getElementById('fechaIngreso').value = formatToInputDate(data.fechaIngreso);
     document.getElementById('nacionalidad').value = data.nacionalidad || '';
-    document.getElementById('genero').value = data.genero || '';
     document.getElementById('domicilio').value = data.domicilio || '';
     
     if (document.getElementById('carpetaDrive')) {
         document.getElementById('carpetaDrive').value = data.carpetaDrive || '';
     }
+
+    const generoSel = document.getElementById('genero');
+    if (generoSel) generoSel.value = formatGenero(data.genero);
 
     // Llenar Médicos
     const medContainer = document.getElementById('medicosContainer');
@@ -199,7 +209,6 @@ function populateForm(data) {
         if (divSalida) divSalida.classList.remove('hidden');
         if (inputSalida) inputSalida.value = formatToInputDate(data.fechaSalida);
         if (btnRestore) btnRestore.classList.remove('hidden');
-        
         if (statusBadge) {
             statusBadge.textContent = 'ARCHIVADO';
             statusBadge.classList.remove('hidden');
@@ -216,7 +225,7 @@ function populateForm(data) {
     renderDocumentViewers(data);
 }
 
-// [Descripción: Funciones dinámicas para agregar bloques HTML de médicos, obras sociales y responsables.]
+// [Descripción: Creación de filas dinámicas HTML. Límite máximo establecido para Obras Sociales (3), Médicos (3) y Responsables (5).]
 function addMedicoRow(medValue, espValue) {
     const container = document.getElementById('medicosContainer');
     if(container.children.length >= 3) return showToast("Máximo 3 médicos permitidos.");
@@ -307,7 +316,7 @@ function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
     container.appendChild(row);
 }
 
-// [Descripción: Configura la pestaña de Documentación armando la barra lateral y los visores gigantes para los 18 archivos.]
+// [Descripción: Pestaña Documentos. Genera la barra lateral y los visores grandes inyectando las tarjetas de Google Drive dinámicamente.]
 function renderDocumentViewers(data) {
     const docSections = [
         { id: 'dni', label: 'DNI Residente', icon: 'fa-id-card', f1: 'dniArchivo1', f2: 'dniArchivo2', t1: 'DNI Frente 1', t2: 'DNI Dorso 2' },
@@ -336,7 +345,6 @@ function renderDocumentViewers(data) {
         const val1 = data[sec.f1] || '';
         const val2 = data[sec.f2] || '';
 
-        // Botón Barra Lateral
         const btn = document.createElement('button');
         btn.className = `docs-tab-btn`;
         btn.id = `btn-doc-${sec.id}`;
@@ -347,7 +355,6 @@ function renderDocumentViewers(data) {
         };
         sidebar.appendChild(btn);
 
-        // Contenedor del Panel (donde se inyectan las 2 tarjetas visuales)
         const panel = document.createElement('div');
         panel.className = 'doc-panel hidden';
         panel.id = `panel-doc-${sec.id}`;
@@ -486,7 +493,7 @@ function switchDocSubTab(tabId) {
     if (activePanel) activePanel.classList.remove('hidden');
 }
 
-// [Descripción: Controlador central de UI. Determina qué inputs son editables y muestra/oculta botones de guardado.]
+// [Descripción: Controlador Global del Estado de Edición. Activa o desactiva la lectura/escritura de los inputs.]
 function toggleEditMode(tab, enable) {
     if (isArchivedProfile) {
         return showToast("Perfil archivado: Solo lectura.", true);
@@ -569,7 +576,7 @@ function toggleEditMode(tab, enable) {
     }
 }
 
-// [Descripción: Proceso de guardado. Sube imágenes a Drive, empaca todos los campos del HTML en un JSON masivo y se los envía al backend de Apps Script.]
+// [Descripción: Proceso de guardado. Sube imágenes a Drive, empaca todos los campos del HTML en un JSON masivo y se los envía al backend.]
 async function saveResident(tab) {
     if(isArchivedProfile) return;
     
