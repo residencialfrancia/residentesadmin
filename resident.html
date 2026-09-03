@@ -1,4 +1,4 @@
-<!-- [Descripción: HTML del perfil actualizado. Se restauró la clase nativa del contenedor para que vuelva a mostrar el fondo azul. Se agruparon "Nombre Completo", "Apodo" y "Número de Socio" en una única fila flexible principal, aprovechando el ancho total de la pantalla.] -->
+<!-- [Descripción: Estructura HTML del Perfil actualizada. Se agruparon las secciones de "Datos Médicos" y "Obra Social" en un contenedor Flex para que compartan la misma fila horizontal sin solaparse. Se forzó el ancho total (100%) al input de Google Drive. Por último, se envolvió toda la interfaz de la pestaña Documentación en un bloque blanco para que sea visible y contraste perfectamente sobre el fondo azul institucional.] -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -33,9 +33,10 @@
 
         <div id="residentForm" class="profile-form readonly-mode">
 
-            <!-- PESTAÑA: INFO PERFIL (Fondo azul restaurado) -->
+            <!-- PESTAÑA: INFO PERFIL -->
             <div id="tab-perfil" class="tab-content-wrapper">
                 
+                <!-- SECCIÓN 1: DATOS PERSONALES -->
                 <section class="profile-section section-1">
                     <div class="top-info-wrapper" style="display: flex; gap: 2rem; width: 100%; align-items: flex-start; flex-wrap: wrap;">
                         
@@ -56,10 +57,8 @@
                             </div>
                         </div>
                         
-                      <!-- [Descripción: Corrección de la estructura de la columna de información. Se eliminó el 'justify-content: space-between' que generaba espacios gigantes y empujaba la Fecha de Ingreso fuera de la pantalla. Se usó un 'gap' compacto para mantener los datos ordenados.] -->
                         <div class="info-column" style="flex: 1; display: flex; flex-direction: column; gap: 15px; justify-content: flex-start; min-width: 300px;">
                             
-                            <!-- FILA 1: NOMBRE, APODO, SOCIO -->
                             <div class="form-row super-text" style="margin-bottom: 0;">
                                 <div class="form-group flex-2" style="min-width: 250px;">
                                     <label>Nombre Completo</label>
@@ -75,7 +74,6 @@
                                 </div>
                             </div>
 
-                            <!-- FILA 2: NACIMIENTO, EDAD, DNI, CUIL, TRÁMITE -->
                             <div class="form-row medium-text" style="margin-bottom: 0;">
                                 <div class="form-group flex-1" style="min-width: 140px;">
                                     <label>Fecha Nacimiento</label>
@@ -99,7 +97,6 @@
                                 </div>
                             </div>
 
-                            <!-- FILA 3: INGRESO, GÉNERO, NACIONALIDAD, DOMICILIO -->
                             <div class="form-row medium-text" style="margin-bottom: 0;">
                                 <div class="form-group flex-1" style="min-width: 130px;">
                                     <label>Fecha Ingreso</label>
@@ -124,28 +121,36 @@
                                 </div>
                             </div>
                         </div>
-
-                <section class="profile-section section-2">
-                    <h3><i class="fa-solid fa-user-doctor"></i> Datos Médicos</h3>
-                    <div class="form-row" style="flex-wrap: wrap; gap: 15px; justify-content: center; margin-bottom: 25px; border-bottom: 1px dashed var(--border-color); padding-bottom: 20px;">
-                        <div class="form-group flex-1" style="min-width: 200px;"><label>Lugar de Internación</label><input type="text" id="lugarInternacion" name="lugarInternacion" readonly></div>
-                        <div class="form-group flex-1" style="min-width: 200px;"><label>Alergias</label><input type="text" id="alergias" name="alergias" readonly></div>
-                    </div>
-                    <div id="medicosContainer" style="display: flex; flex-direction: column; gap: 15px;"></div>
-                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-                        <button type="button" id="btnAddMedico" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Médico</button>
                     </div>
                 </section>
 
-                <section class="profile-section section-3">
-                    <h3><i class="fa-solid fa-notes-medical"></i> Obra Social</h3>
-                    <div id="obrasSocialesContainer" style="display: flex; flex-direction: column; gap: 15px;"></div>
-                    <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                        <button type="button" id="btnAddOs" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Obra Social</button>
-                    </div>
-                </section>
+                <!-- ================== BLOQUE DIVIDIDO: MÉDICOS Y OBRA SOCIAL ================== -->
+                <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 1.5rem;">
+                    
+                    <section class="profile-section" style="flex: 1; min-width: 300px; margin-bottom: 0;">
+                        <h3><i class="fa-solid fa-user-doctor"></i> Datos Médicos</h3>
+                        <div class="form-row" style="flex-wrap: wrap; gap: 15px; margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
+                            <div class="form-group flex-1"><label>Lugar de Internación</label><input type="text" id="lugarInternacion" name="lugarInternacion" readonly></div>
+                            <div class="form-group flex-1"><label>Alergias</label><input type="text" id="alergias" name="alergias" readonly></div>
+                        </div>
+                        <div id="medicosContainer" style="display: flex; flex-direction: column; gap: 15px;"></div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                            <button type="button" id="btnAddMedico" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Médico</button>
+                        </div>
+                    </section>
 
-                <section class="profile-section section-4">
+                    <section class="profile-section" style="flex: 1; min-width: 300px; margin-bottom: 0;">
+                        <h3><i class="fa-solid fa-notes-medical"></i> Obra Social</h3>
+                        <div id="obrasSocialesContainer" style="display: flex; flex-direction: column; gap: 15px;"></div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                            <button type="button" id="btnAddOs" class="btn btn-outline hidden"><i class="fa-solid fa-plus"></i> Añadir Obra Social</button>
+                        </div>
+                    </section>
+
+                </div>
+                <!-- =========================================================================== -->
+
+                <section class="profile-section">
                     <h3><i class="fa-solid fa-users"></i> Familiares Responsables</h3>
                     <div id="responsablesContainer"></div>
                     <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
@@ -155,8 +160,8 @@
 
                 <section class="profile-section section-5">
                     <h3><i class="fa-brands fa-google-drive" style="color: #0F9D58;"></i> Sistema de Archivos</h3>
-                    <div class="form-row" style="flex-wrap: wrap; gap: 15px;">
-                        <div class="form-group flex-1" style="min-width: 250px;">
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <div class="form-group full-width">
                             <label>ID de la Carpeta del Residente</label>
                             <input type="text" id="carpetaDrive" name="carpetaDrive" readonly>
                         </div>
@@ -164,7 +169,7 @@
                 </section>
             </div> 
             
-            <!-- PESTAÑA: DOCUMENTACIÓN (Fondo azul restaurado) -->
+            <!-- PESTAÑA: DOCUMENTACIÓN -->
             <div id="tab-documentacion" class="hidden tab-content-wrapper">
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; width: 100%;">
                     <button id="btnEditDocs" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Editar Documentos</button>
@@ -172,19 +177,21 @@
                     <button id="btnSaveDocs" class="btn btn-success hidden"><i class="fa-solid fa-save"></i> Guardar Cambios</button>
                 </div>
                 
-                <div class="docs-layout" style="background: var(--white); padding: 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-                    <!-- Barra Lateral -->
-                    <div class="docs-sidebar" id="docsSidebar"></div>
-                    
-                    <!-- Contenido Central -->
-                    <div class="docs-content" id="docsContent">
-                        <div id="docsEmptyMsg" class="docs-empty-state" style="display:none;">
-                            <i class="fa-regular fa-folder-open"></i>
-                            <h3>No hay documentos registrados</h3>
-                            <p style="margin-top: 5px;">Presione "Editar Documentos" para añadir nuevos archivos.</p>
+                <!-- CAJA BLANCA CONTENEDORA PARA DAR CONTRASTE -->
+                <div style="background: var(--white); padding: 25px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+                    <div class="docs-layout">
+                        <div class="docs-sidebar" id="docsSidebar"></div>
+                        
+                        <div class="docs-content" id="docsContent">
+                            <div id="docsEmptyMsg" class="docs-empty-state" style="display:none;">
+                                <i class="fa-regular fa-folder-open"></i>
+                                <h3>No hay documentos registrados</h3>
+                                <p style="margin-top: 5px;">Presione "Editar Documentos" para añadir nuevos archivos.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </main>
