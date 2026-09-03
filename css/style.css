@@ -213,30 +213,38 @@ select { padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 
 /* =========================================================
    REGLAS DE IMPRESIÓN A4
    ========================================================= */
-@media print {
-    @page { size: A4 portrait; margin: 15mm; }
-    
-    body { background: white !important; font-size: 11px !important; }
-    
-    /* Ocultar UI de navegación y controles */
-    .main-header, .tabs-nav, .controls-section, .advanced-toolbar, .modal, .toast { display: none !important; }
-    
-    /* Forzar vista de contenedor principal */
-    .dashboard-container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; box-shadow: none !important; }
-    .tab-content { display: block !important; }
-    
-    /* Cabecera de Impresión */
-    .print-header { display: flex !important; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
-    .print-header h2 { margin: 0; font-size: 18px; color: black; text-transform: uppercase; }
-    .print-logo { width: 50px; height: auto; filter: grayscale(100%) contrast(200%); } /* Logo en negro pequeño */
+/* [Descripción: Estilos avanzados para Impresión y Select. El Select en modo readonly ahora pierde su flecha y bordes para verse como texto normal. La impresión ahora fuerza orientación Landscape (Apaisado) con Margen 0 para eliminar automáticamente la URL y fechas predeterminadas del navegador. La tabla utiliza Flexbox y altura 100vh para rellenar toda la hoja A4 maximizando su tamaño.] */
 
-    /* Estilos de Tabla para A4 */
-    .list-container { box-shadow: none !important; overflow: visible !important; border: none !important; }
-    .data-table { border: 1px solid black; width: 100% !important; }
-    .data-table th { background: #eee !important; color: black !important; padding: 8px 5px !important; border: 1px solid black !important; font-size: 10px !important; }
-    .data-table td { padding: 8px 5px !important; border: 1px solid black !important; font-size: 10px !important; word-break: break-word; }
-    .data-table tr { page-break-inside: avoid; }
+.readonly-mode select { border-color: transparent !important; background: transparent !important; padding-left: 0; color: #1a252f; font-weight: 600; box-shadow: none !important; pointer-events: none; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+
+@media print {
+    /* Margen 0 elimina los encabezados/pies de página nativos del navegador (URL, Fecha) */
+    @page { size: A4 landscape; margin: 0; }
     
-    /* Si la vista actual es mosaico, forzamos la ocultación en impresión porque solo se imprime la lista */
-    #gridActivos, #gridArchivados { display: none !important; }
+    body { 
+        margin: 0 !important; 
+        padding: 10mm 15mm !important; /* Padding interno para que no pegue en el borde */
+        height: 100vh !important; 
+        display: flex; 
+        flex-direction: column; 
+        overflow: hidden; 
+        background: white !important; 
+    }
+    
+    .dashboard-container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; flex: 1; display: flex; flex-direction: column; }
+    #tab-activos, #tab-archivados { flex: 1; display: flex !important; flex-direction: column; }
+    
+    .list-container { flex: 1; display: flex; flex-direction: column; border: none !important; box-shadow: none !important; overflow: hidden !important; }
+    
+    /* La tabla se expande para ocupar todo el alto y ancho restante de la hoja */
+    .data-table { flex: 1; width: 100% !important; height: 100% !important; border: 1px solid black; }
+    .data-table th, .data-table td { border: 1px solid black !important; padding: 6px !important; text-align: left; font-size: 11px !important; }
+    .data-table th { background: #eaeaea !important; color: black !important; font-weight: bold; }
+    
+    .print-header { display: flex !important; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; flex-shrink: 0; }
+    .print-header h2 { margin: 0; font-size: 20px; color: black; text-transform: uppercase; font-weight: bold; }
+    .print-logo { width: auto; height: 40px; } /* Ajuste de logo para que quede pequeño y en la esquina */
+
+    /* Ocultar UI de navegación */
+    .main-header, .tabs-nav, .controls-section, .advanced-toolbar, .modal, .toast, #gridActivos, #gridArchivados { display: none !important; }
 }
