@@ -56,10 +56,11 @@
                             </div>
                         </div>
                         
-                        <div class="info-column" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 300px;">
+                      <!-- [Descripción: Corrección de la estructura de la columna de información. Se eliminó el 'justify-content: space-between' que generaba espacios gigantes y empujaba la Fecha de Ingreso fuera de la pantalla. Se usó un 'gap' compacto para mantener los datos ordenados.] -->
+                        <div class="info-column" style="flex: 1; display: flex; flex-direction: column; gap: 15px; justify-content: flex-start; min-width: 300px;">
                             
-                            <!-- FILA UNIFICADA: NOMBRE, APODO Y NÚMERO DE SOCIO -->
-                            <div class="form-row super-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                            <!-- FILA 1: NOMBRE, APODO, SOCIO -->
+                            <div class="form-row super-text" style="margin-bottom: 0;">
                                 <div class="form-group flex-2" style="min-width: 250px;">
                                     <label>Nombre Completo</label>
                                     <input type="text" id="nombre" name="nombre" required readonly>
@@ -74,16 +75,33 @@
                                 </div>
                             </div>
 
-                            <!-- FILA SECUNDARIA -->
-                            <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                            <!-- FILA 2: NACIMIENTO, EDAD, DNI, CUIL, TRÁMITE -->
+                            <div class="form-row medium-text" style="margin-bottom: 0;">
                                 <div class="form-group flex-1" style="min-width: 140px;">
                                     <label>Fecha Nacimiento</label>
                                     <input type="date" id="fechaNacimiento" name="fechaNacimiento" readonly>
                                 </div>
-
-                                <!-- [Descripción: Agregado el campo Género. Se ubica en la fila de datos personales básicos, aprovechando el espacio junto a Nacionalidad o Fecha de Ingreso.] -->
-                            <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 0;">
+                                <div class="form-group" style="flex: 0.5; min-width: 70px;">
+                                    <label>Edad</label>
+                                    <input type="number" id="edad" name="edad" readonly>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 130px;">
+                                    <label>DNI</label>
+                                    <input type="text" id="dni" name="dni" readonly>
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 160px;">
+                                    <label>CUIL</label>
+                                    <input type="text" id="cuil" name="cuil" readonly>
+                                </div>
                                 <div class="form-group flex-1" style="min-width: 150px;">
+                                    <label>N° Trámite</label>
+                                    <input type="text" id="numeroTramite" name="numeroTramite" readonly>
+                                </div>
+                            </div>
+
+                            <!-- FILA 3: INGRESO, GÉNERO, NACIONALIDAD, DOMICILIO -->
+                            <div class="form-row medium-text" style="margin-bottom: 0;">
+                                <div class="form-group flex-1" style="min-width: 130px;">
                                     <label>Fecha Ingreso</label>
                                     <input type="date" id="fechaIngreso" name="fechaIngreso" readonly>
                                 </div>
@@ -104,42 +122,8 @@
                                     <label>Domicilio</label>
                                     <input type="text" id="domicilio" name="domicilio" readonly>
                                 </div>
-                                <div class="form-group" style="flex: 0.5; min-width: 60px;">
-                                    <label>Edad</label>
-                                    <input type="number" id="edad" name="edad" readonly>
-                                </div>
-                                <div class="form-group flex-1" style="min-width: 130px;">
-                                    <label>DNI</label>
-                                    <input type="text" id="dni" name="dni" readonly>
-                                </div>
-                                <div class="form-group flex-1" style="min-width: 160px;">
-                                    <label>CUIL</label>
-                                    <input type="text" id="cuil" name="cuil" readonly>
-                                </div>
-                                <div class="form-group flex-1" style="min-width: 150px;">
-                                    <label>N° Trámite</label>
-                                    <input type="text" id="numeroTramite" name="numeroTramite" readonly>
-                                </div>
-                            </div>
-
-                            <!-- FILA TERCIARIA -->
-                            <div class="form-row medium-text" style="flex-wrap: wrap; gap: 15px; margin-bottom: 0;">
-                                <div class="form-group flex-1" style="min-width: 150px;">
-                                    <label>Fecha Ingreso</label>
-                                    <input type="date" id="fechaIngreso" name="fechaIngreso" readonly>
-                                </div>
-                                <div class="form-group flex-1" style="min-width: 150px;">
-                                    <label>Nacionalidad</label>
-                                    <input type="text" id="nacionalidad" name="nacionalidad" readonly>
-                                </div>
-                                <div class="form-group flex-2" style="min-width: 250px;">
-                                    <label>Domicilio</label>
-                                    <input type="text" id="domicilio" name="domicilio" readonly>
-                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
 
                 <section class="profile-section section-2">
                     <h3><i class="fa-solid fa-user-doctor"></i> Datos Médicos</h3>
