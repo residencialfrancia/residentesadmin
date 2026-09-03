@@ -1,4 +1,4 @@
-// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando un residente o creando uno nuevo. IMPORTANTE: Reemplazar el API_URL si hay una Nueva Implementación en Apps Script.]
+// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando un residente o creando uno nuevo.]
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
@@ -24,16 +24,68 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormEvents();
 });
 
-// [Descripción: Funciones utilitarias para el cálculo de edad en tiempo real, extracción segura de IDs de Google Drive, formateo de fechas y visualización de notificaciones temporales (toast).]
+// [Descripción: Sistema de Auto-ajuste de fuentes. Evita que textos largos (como CUIL, Nombres largos o Domicilios) se oculten o solapen. Reduce gradualmente el tamaño de la letra hasta que encaje perfecto en su caja.]
+window.adjustInputFontSizes = function() {
+    const inputs = document.querySelectorAll('#residentForm input[type="text"], #residentForm input[type="number"]');
+    
+    inputs.forEach(input => {
+        if (input.offsetWidth === 0 || input.clientWidth === 0) return;
+        
+        input.style.fontSize = ''; 
+        let currentSize = parseFloat(window.getComputedStyle(input).fontSize) || 16;
+        
+        const text = input.value || '';
+        if (!text) return;
+        
+        const helper = document.createElement('span');
+        const style = window.getComputedStyle(input);
+        
+        helper.style.fontFamily = style.fontFamily;
+        helper.style.fontWeight = style.fontWeight;
+        helper.style.letterSpacing = style.letterSpacing;
+        helper.style.whiteSpace = 'pre';
+        helper.style.position = 'absolute';
+        helper.style.visibility = 'hidden';
+        
+        document.body.appendChild(helper);
+        
+        const paddingLeft = parseFloat(style.paddingLeft) || 0;
+        const paddingRight = parseFloat(style.paddingRight) || 0;
+        const availableWidth = input.clientWidth - paddingLeft - paddingRight - 12; 
+
+        helper.textContent = text;
+        helper.style.fontSize = currentSize + 'px';
+        
+        while (helper.offsetWidth > availableWidth && currentSize > 11) {
+            currentSize -= 0.5;
+            helper.style.fontSize = currentSize + 'px';
+        }
+        
+        input.style.fontSize = currentSize + 'px';
+        document.body.removeChild(helper);
+    });
+}
+window.addEventListener('resize', () => setTimeout(adjustInputFontSizes, 100));
+
+// [Descripción: Funciones utilitarias para cálculo de edad, extracción de IDs de Drive y formato de fechas.]
 function calculateAgeLive() {
     const dateVal = document.getElementById('fechaNacimiento').value;
     const ageInput = document.getElementById('edad');
-    if (!dateVal) { ageInput.value = ''; return; }
+    
+    if (!dateVal) { 
+        ageInput.value = ''; 
+        return; 
+    }
+    
     const birthDate = new Date(dateVal + 'T00:00:00'); 
     const today = new Date();
+    
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+    
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
     ageInput.value = age;
 }
 
@@ -51,7 +103,9 @@ function formatToInputDate(sheetDate) {
             return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
         }
         return new Date(sheetDate).toISOString().split('T')[0];
-    } catch { return sheetDate; }
+    } catch { 
+        return sheetDate; 
+    }
 }
 
 function showToast(message, isError = false) {
@@ -61,7 +115,7 @@ function showToast(message, isError = false) {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// [Descripción: Lógica de navegación entre las pestañas principales de la página (Perfil vs Documentación) con cambios visuales según la pestaña activa.]
+// [Descripción: Lógica de navegación entre la pestaña del Perfil y la Documentación.]
 window.switchProfileTab = function(tabName) {
     const p = document.getElementById('tab-perfil');
     const d = document.getElementById('tab-documentacion');
@@ -79,9 +133,10 @@ window.switchProfileTab = function(tabName) {
         bd.classList.add('active'); 
         bp.classList.remove('active');
     }
+    setTimeout(adjustInputFontSizes, 100);
 }
 
-// [Descripción: Carga los datos del residente consultando al backend (Activos y Archivados). Si lo encuentra, delega los datos a la función populateForm.]
+// [Descripción: Descarga los datos del residente desde Google Sheets (vía backend).]
 async function loadResidentData() {
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
@@ -93,10 +148,15 @@ async function loadResidentData() {
         ]);
 
         let todosLosResidentes = [];
-        if (resActivos.status === 'success') todosLosResidentes = todosLosResidentes.concat(resActivos.data);
-        if (resArchivados.status === 'success') todosLosResidentes = todosLosResidentes.concat(resArchivados.data);
+        if (resActivos.status === 'success') {
+            todosLosResidentes = todosLosResidentes.concat(resActivos.data);
+        }
+        if (resArchivados.status === 'success') {
+            todosLosResidentes = todosLosResidentes.concat(resArchivados.data);
+        }
 
         const resident = todosLosResidentes.find(r => r.nombre === currentResidentName);
+        
         if (resident) {
             isArchivedProfile = (resident.estado === 'Archivado');
             loadedDataGlobal = resident;
@@ -111,7 +171,7 @@ async function loadResidentData() {
     }
 }
 
-// [Descripción: Rellena los campos HTML del perfil con la información del residente, incluyendo los nuevos campos (Apodo, Género) y genera las filas dinámicas de Médicos, Obras Sociales y Responsables.]
+// [Descripción: Inyecta los datos del JSON en los campos del formulario HTML. Carga Apodo, Género y gestiona los arrays dinámicos.]
 function populateForm(data) {
     document.getElementById('nombre').value = data.nombre || '';
     document.getElementById('apodo').value = data.apodo || '';
@@ -127,37 +187,50 @@ function populateForm(data) {
     document.getElementById('nacionalidad').value = data.nacionalidad || '';
     document.getElementById('genero').value = data.genero || '';
     document.getElementById('domicilio').value = data.domicilio || '';
-    if(document.getElementById('carpetaDrive')) document.getElementById('carpetaDrive').value = data.carpetaDrive || '';
+    
+    if (document.getElementById('carpetaDrive')) {
+        document.getElementById('carpetaDrive').value = data.carpetaDrive || '';
+    }
 
-    // Llenar Médicos (hasta 3)
+    // Llenar Médicos
     const medContainer = document.getElementById('medicosContainer');
     medContainer.innerHTML = '';
     const medicos = data.medicosList || [data.medicoCabecera];
     const especialidades = data.especialidadList || [];
+    
     if (medicos.length > 0 && medicos[0]) {
         medicos.forEach((med, i) => addMedicoRow(med, especialidades[i] || ''));
-    } else { addMedicoRow('', ''); }
+    } else { 
+        addMedicoRow('', ''); 
+    }
 
-    // Llenar Obras Sociales (hasta 3)
+    // Llenar Obras Sociales
     const osContainer = document.getElementById('obrasSocialesContainer');
     osContainer.innerHTML = '';
+    
     if (data.obrasSociales && data.obrasSociales.length > 0 && data.obrasSociales[0]) {
         data.obrasSociales.forEach((os, i) => addOsRow(os, data.numerosOs[i] || '', data.dorsosOs ? data.dorsosOs[i] : ''));
-    } else { addOsRow('', '', ''); }
+    } else { 
+        addOsRow('', '', ''); 
+    }
 
-    // Llenar Familiares Responsables (hasta 5)
+    // Llenar Familiares Responsables
     const respContainer = document.getElementById('responsablesContainer');
     respContainer.innerHTML = '';
+    
     if (data.responsablesList && data.responsablesList.length > 0 && data.responsablesList[0]) {
         data.responsablesList.forEach((resp, i) => {
             addResponsableRow(resp, data.parentescoList ? data.parentescoList[i] : '', data.dniResponsablesList[i] || '', data.telefonosList[i] || '', data.domicilioResponsablesList[i] || '');
         });
-    } else { addResponsableRow('', '', '', '', ''); }
+    } else { 
+        addResponsableRow('', '', '', '', ''); 
+    }
 
     // Control de UI para Archivados
     const divSalida = document.getElementById('divFechaSalida');
     const inputSalida = document.getElementById('fechaSalida');
     const statusBadge = document.getElementById('statusBadge'); 
+    
     if (isArchivedProfile) {
         if(divSalida) divSalida.classList.remove('hidden');
         if(inputSalida) inputSalida.value = formatToInputDate(data.fechaSalida);
@@ -174,9 +247,12 @@ function populateForm(data) {
     document.getElementById('profileImage').src = (data.fotoUrl && data.fotoUrl !== '') ? data.fotoUrl : FALLBACK_IMAGE;
 
     renderDocumentViewers(data);
+    
+    // Auto-ajustar fuentes al terminar de cargar los datos
+    setTimeout(adjustInputFontSizes, 150); 
 }
 
-// [Descripción: Funciones generadoras de filas HTML dinámicas para Médicos, Obras Sociales y Responsables. Limitan la creación de filas al máximo permitido en el Sheets.]
+// [Descripción: Creación de filas dinámicas HTML. Límite máximo establecido para Obras Sociales (3), Médicos (3) y Responsables (5).]
 function addMedicoRow(medValue, espValue) {
     const container = document.getElementById('medicosContainer');
     if(container.children.length >= 3) return showToast("Máximo 3 médicos permitidos.");
@@ -193,10 +269,13 @@ function addMedicoRow(medValue, espValue) {
                 <label>Especialidad</label>
                 <input type="text" class="med-esp" value="${espValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove();"><i class="fa-solid fa-trash"></i></button>
+            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove(); setTimeout(adjustInputFontSizes, 50);">
+                <i class="fa-solid fa-trash"></i>
+            </button>
         </div>
     `;
     container.appendChild(row);
+    setTimeout(adjustInputFontSizes, 50);
 }
 
 function addOsRow(osValue, nroValue, dorsoValue) {
@@ -219,10 +298,13 @@ function addOsRow(osValue, nroValue, dorsoValue) {
                 <label>N° Dorso</label>
                 <input type="text" class="os-dorso" value="${dorsoValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove();"><i class="fa-solid fa-trash"></i></button>
+            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove(); setTimeout(adjustInputFontSizes, 50);">
+                <i class="fa-solid fa-trash"></i>
+            </button>
         </div>
     `;
     container.appendChild(row);
+    setTimeout(adjustInputFontSizes, 50);
 }
 
 function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
@@ -234,29 +316,37 @@ function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
     row.innerHTML = `
         <div class="form-row" style="align-items: flex-end; flex-wrap: wrap; gap: 15px; margin-bottom: 0;">
             <div class="form-group" style="flex: 1.5; min-width: 150px;">
-                <label>Nombre</label><input type="text" class="resp-nombre" value="${nombreVal}" ${!isEditMode ? 'readonly' : ''}>
+                <label>Nombre</label>
+                <input type="text" class="resp-nombre" value="${nombreVal}" ${!isEditMode ? 'readonly' : ''}>
             </div>
             <div class="form-group" style="flex: 1; min-width: 120px;">
-                <label>Parentesco</label><input type="text" class="resp-par" value="${parentezcoVal}" ${!isEditMode ? 'readonly' : ''}>
+                <label>Parentesco</label>
+                <input type="text" class="resp-par" value="${parentezcoVal}" ${!isEditMode ? 'readonly' : ''}>
             </div>
             <div class="form-group" style="flex: 1; min-width: 120px;">
-                <label>DNI</label><input type="text" class="resp-dni" value="${dniVal}" ${!isEditMode ? 'readonly' : ''}>
+                <label>DNI</label>
+                <input type="text" class="resp-dni" value="${dniVal}" ${!isEditMode ? 'readonly' : ''}>
             </div>
             <div class="form-group" style="flex: 1; min-width: 120px;">
-                <label>Teléfono</label><input type="text" class="resp-tel" value="${telVal}" ${!isEditMode ? 'readonly' : ''}>
+                <label>Teléfono</label>
+                <input type="text" class="resp-tel" value="${telVal}" ${!isEditMode ? 'readonly' : ''}>
             </div>
             <div class="form-group" style="flex: 2; min-width: 180px; display: flex; gap: 10px; align-items: flex-end;">
                 <div style="flex: 1; display: flex; flex-direction: column;">
-                    <label>Domicilio</label><input type="text" class="resp-dom" value="${domVal}" ${!isEditMode ? 'readonly' : ''}>
+                    <label>Domicilio</label>
+                    <input type="text" class="resp-dom" value="${domVal}" ${!isEditMode ? 'readonly' : ''}>
                 </div>
-                <button type="button" class="btn-remove-resp ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.responsable-block').remove();"><i class="fa-solid fa-trash"></i></button>
+                <button type="button" class="btn-remove-resp ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.responsable-block').remove(); setTimeout(adjustInputFontSizes, 50);">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             </div>
         </div>
     `;
     container.appendChild(row);
+    setTimeout(adjustInputFontSizes, 50);
 }
 
-// [Descripción: Configuración de la Barra Lateral y Paneles de Documentación. Construye las 9 subpestañas dinámicamente inyectando la estructura original de visores y cajas de texto de Drive debajo.]
+// [Descripción: Pestaña Documentos. Genera la barra lateral y los visores grandes inyectando las tarjetas de Google Drive dinámicamente.]
 function renderDocumentViewers(data) {
     const docSections = [
         { id: 'dni', label: 'DNI Residente', icon: 'fa-id-card', f1: 'dniArchivo1', f2: 'dniArchivo2', t1: 'DNI Frente 1', t2: 'DNI Dorso 2' },
@@ -272,6 +362,7 @@ function renderDocumentViewers(data) {
 
     const sidebar = document.getElementById('docsSidebar');
     const content = document.getElementById('docsContent');
+    
     sidebar.innerHTML = '';
     
     Array.from(content.children).forEach(child => {
@@ -282,6 +373,7 @@ function renderDocumentViewers(data) {
         const val1 = data[sec.f1] || '';
         const val2 = data[sec.f2] || '';
 
+        // Botón Barra Lateral
         const btn = document.createElement('button');
         btn.className = `docs-tab-btn`;
         btn.id = `btn-doc-${sec.id}`;
@@ -289,6 +381,7 @@ function renderDocumentViewers(data) {
         btn.onclick = (e) => { e.preventDefault(); switchDocSubTab(sec.id); };
         sidebar.appendChild(btn);
 
+        // Contenedor del Panel
         const panel = document.createElement('div');
         panel.className = 'doc-panel hidden';
         panel.id = `panel-doc-${sec.id}`;
@@ -320,289 +413,5 @@ function renderDocumentViewers(data) {
     updateDocsSidebarVisibility();
 }
 
-// [Descripción: Crea el diseño visual del visor grande individual para cada archivo, con botones condicionados según si el usuario está en modo edición o no.]
-function createOriginalViewerCard(title, fileId, inputId, icon) {
-    const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${extractDriveId(fileId)}` : '#';
-    const hiddenClass = isEditMode && !isArchivedProfile ? '' : 'hidden'; 
-    
-    return `
-        <div style="flex: 1; min-width: 350px;">
-            <h3 style="color: var(--primary-blue); border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-top: 0;">
-                <i class="fa-solid ${icon}"></i> ${title}
-            </h3>
-            
-            <div class="doc-viewer-card" style="background: var(--white); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm);">
-                <div id="container-${inputId}" style="position: relative; width: 100%; min-height: ${fileId ? '450px' : '250px'}; height: auto; border: 1px solid #eee; border-radius: 4px; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; padding: 15px;">
-                    ${fileId ? `
-                        <div id="loader-${inputId}" style="position: absolute; display: flex; flex-direction: column; align-items: center; color: var(--primary-blue);">
-                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2.5em; margin-bottom: 10px;"></i>
-                            <span style="font-weight: bold;">Descargando...</span>
-                        </div>
-                        <img id="img-${inputId}" alt="${title}" style="width: 100%; height: auto; max-height: 750px; object-fit: contain; display: none;">
-                    ` : `
-                        <p style="text-align:center; color:#888; font-style:italic; padding:20px; margin: 0;"><i class="fa-solid fa-image" style="font-size: 3em; margin-bottom: 10px; color: #ccc;"></i><br>Sin documento</p>
-                    `}
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <div>
-                        <label class="btn-upload-doc ${hiddenClass}" for="upload-${inputId}" style="background: #0F9D58; color: white; padding: 10px 18px; border-radius: 4px; font-size: 0.9em; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Cargar manual
-                        </label>
-                        <input type="file" id="upload-${inputId}" accept="image/*,application/pdf" style="display: none;" onchange="handleDocumentUpload(this, '${inputId}')">
-                    </div>
-                    ${fileId ? `
-                    <a href="${downloadUrl}" target="_blank" style="background: var(--primary-blue); color: white; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-size: 0.9em; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
-                        <i class="fa-solid fa-download"></i> Ver Original
-                    </a>
-                    ` : ''}
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// [Descripción: Lógica que oculta las subpestañas de documentación vacías si el usuario solo está "mirando", pero las muestra todas si activa el modo Edición. También maneja el estado de "Mensaje Vacío Centrado".]
-function updateDocsSidebarVisibility() {
-    const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
-    let firstVisible = null;
-
-    sections.forEach(secId => {
-        const btn = document.getElementById(`btn-doc-${secId}`);
-        const panel = document.getElementById(`panel-doc-${secId}`);
-        if (!btn || !panel) return;
-
-        const inputs = panel.querySelectorAll('.doc-id-input');
-        let hasValue = false;
-        inputs.forEach(inp => { if (inp.value.trim() !== '') hasValue = true; });
-
-        if (isEditMode) {
-            btn.style.display = 'flex';
-            if (!firstVisible) firstVisible = secId;
-        } else {
-            if (hasValue) {
-                btn.style.display = 'flex';
-                if (!firstVisible) firstVisible = secId;
-            } else {
-                btn.style.display = 'none';
-            }
-        }
-    });
-
-    const emptyMsg = document.getElementById('docsEmptyMsg');
-    if (firstVisible) {
-        emptyMsg.style.display = 'none';
-        switchDocSubTab(firstVisible);
-    } else {
-        sections.forEach(secId => {
-            const panel = document.getElementById(`panel-doc-${secId}`);
-            if (panel) panel.classList.add('hidden');
-        });
-        emptyMsg.style.display = 'flex'; 
-    }
-}
-
-// [Descripción: Evento de cambio entre las subpestañas de la barra lateral de documentos al hacerles clic.]
-function switchDocSubTab(tabId) {
-    const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
-    sections.forEach(secId => {
-        const btn = document.getElementById(`btn-doc-${secId}`);
-        const panel = document.getElementById(`panel-doc-${secId}`);
-        if (btn) btn.classList.remove('active');
-        if (panel) panel.classList.add('hidden');
-    });
-
-    const activeBtn = document.getElementById(`btn-doc-${tabId}`);
-    const activePanel = document.getElementById(`panel-doc-${tabId}`);
-    if (activeBtn) activeBtn.classList.add('active');
-    if (activePanel) activePanel.classList.remove('hidden');
-}
-
-// [Descripción: Manejo del Estado de Edición Global. Activa o desactiva los inputs y botones de la página, controlando específicamente campos como Edad (siempre solo lectura) y el selector de Género.]
-function toggleEditMode(tab, enable) {
-    if (isArchivedProfile) return showToast("Perfil archivado: Solo lectura.", true);
-    isEditMode = enable;
-    
-    const tabContainer = tab === 'perfil' ? document.getElementById('tab-perfil') : document.getElementById('tab-documentacion');
-    const inputs = tabContainer.querySelectorAll('input:not([type="hidden"]):not([type="file"])');
-    const selectGenero = document.getElementById('genero');
-    
-    if (enable) {
-        document.getElementById('residentForm').classList.remove('readonly-mode');
-        inputs.forEach(input => input.removeAttribute('readonly'));
-        if(document.getElementById('edad')) document.getElementById('edad').setAttribute('readonly', 'true');
-        if(selectGenero) selectGenero.removeAttribute('disabled');
-        
-        if (tab === 'perfil') {
-            document.getElementById('btnEditPerfil').classList.add('hidden');
-            document.getElementById('btnSavePerfil').classList.remove('hidden');
-            document.getElementById('btnCancelPerfil').classList.remove('hidden');
-            document.getElementById('btnUploadContainer').classList.remove('hidden');
-            document.getElementById('btnAddMedico').classList.remove('hidden');
-            document.getElementById('btnAddOs').classList.remove('hidden');
-            document.getElementById('btnAddResponsable').classList.remove('hidden');
-            tabContainer.querySelectorAll('.btn-remove-os, .btn-remove-resp').forEach(btn => btn.classList.remove('hidden'));
-        } else {
-            document.getElementById('btnEditDocs').classList.add('hidden');
-            document.getElementById('btnSaveDocs').classList.remove('hidden');
-            document.getElementById('btnCancelDocs').classList.remove('hidden');
-            document.querySelectorAll('.btn-upload-doc').forEach(btn => btn.classList.remove('hidden'));
-            updateDocsSidebarVisibility(); 
-        }
-    } else {
-        document.getElementById('residentForm').classList.add('readonly-mode');
-        inputs.forEach(input => input.setAttribute('readonly', 'true'));
-        if(selectGenero) selectGenero.setAttribute('disabled', 'true');
-        
-        if (tab === 'perfil') {
-            document.getElementById('btnEditPerfil').classList.remove('hidden');
-            document.getElementById('btnSavePerfil').classList.add('hidden');
-            document.getElementById('btnCancelPerfil').classList.add('hidden');
-            document.getElementById('btnUploadContainer').classList.add('hidden');
-            document.getElementById('btnAddMedico').classList.add('hidden');
-            document.getElementById('btnAddOs').classList.add('hidden');
-            document.getElementById('btnAddResponsable').classList.add('hidden');
-            tabContainer.querySelectorAll('.btn-remove-os, .btn-remove-resp').forEach(btn => btn.classList.add('hidden'));
-        } else {
-            document.getElementById('btnEditDocs').classList.remove('hidden');
-            document.getElementById('btnSaveDocs').classList.add('hidden');
-            document.getElementById('btnCancelDocs').classList.add('hidden');
-            document.querySelectorAll('.btn-upload-doc').forEach(btn => btn.classList.add('hidden'));
-            updateDocsSidebarVisibility(); 
-        }
-    }
-}
-
-// [Descripción: Proceso final para guardar el residente. Sube las fotos y documentos a Drive y arma el objeto JSON completo con los datos del perfil (incluyendo Apodo y Género) para que Apps Script lo empaquete en las 5 pestañas de Sheets.]
-async function saveResident(tab) {
-    if(isArchivedProfile) return;
-    const btnSave = tab === 'perfil' ? document.getElementById('btnSavePerfil') : document.getElementById('btnSaveDocs');
-    const loader = document.getElementById('loader');
-    
-    const nombreInput = document.getElementById('nombre').value.trim();
-    if(!nombreInput) return showToast("Nombre Obligatorio", true);
-
-    btnSave.disabled = true; loader.classList.remove('hidden');
-
-    try {
-        let finalFotoUrl = currentFotoUrl;
-        if (base64ImageToUpload) {
-            const imgRes = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'uploadImage', payload: { nombre: nombreInput, base64: base64ImageToUpload.base64, mimeType: base64ImageToUpload.mimeType } }) });
-            const imgData = await imgRes.json();
-            if(imgData.status === 'success') finalFotoUrl = imgData.data.url;
-        }
-
-        // Subida de documentos (Si el usuario adjuntó archivos manualmente)
-        for (const [inputId, docData] of Object.entries(documentsToUpload)) {
-            const docRes = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'uploadDocument', payload: { nombre: nombreInput, base64: docData.base64, mimeType: docData.mimeType, docType: inputId } }) });
-            const docResult = await docRes.json();
-            if (docResult.status === 'success') {
-                const idInput = document.getElementById(inputId);
-                if(idInput) idInput.value = docResult.data.fileId;
-            }
-        }
-
-        // Armado del JSON para el backend
-        const residentData = {
-            nombreViejo: currentResidentName, nombre: nombreInput, apodo: document.getElementById('apodo').value,
-            numeroSocio: document.getElementById('numeroSocio').value, fechaNacimiento: document.getElementById('fechaNacimiento').value,
-            dni: document.getElementById('dni').value, cuil: document.getElementById('cuil').value, numeroTramite: document.getElementById('numeroTramite').value,
-            lugarInternacion: document.getElementById('lugarInternacion').value, alergias: document.getElementById('alergias').value,
-            fechaIngreso: document.getElementById('fechaIngreso').value, nacionalidad: document.getElementById('nacionalidad').value,
-            genero: document.getElementById('genero').value, domicilio: document.getElementById('domicilio').value, 
-            fotoUrl: finalFotoUrl, carpetaDrive: document.getElementById('carpetaDrive').value.trim(),
-            
-            medicosList: Array.from(document.querySelectorAll('.med-nombre')).map(el => el.value.trim()),
-            especialidadList: Array.from(document.querySelectorAll('.med-esp')).map(el => el.value.trim()),
-            
-            obrasSociales: Array.from(document.querySelectorAll('.os-name')).map(el => el.value.trim()),
-            numerosOs: Array.from(document.querySelectorAll('.os-number')).map(el => el.value.trim()),
-            dorsosOs: Array.from(document.querySelectorAll('.os-dorso')).map(el => el.value.trim()),
-            
-            responsablesList: Array.from(document.querySelectorAll('.resp-nombre')).map(el => el.value.trim()),
-            parentescoList: Array.from(document.querySelectorAll('.resp-par')).map(el => el.value.trim()),
-            dniResponsablesList: Array.from(document.querySelectorAll('.resp-dni')).map(el => el.value.trim()),
-            telefonosList: Array.from(document.querySelectorAll('.resp-tel')).map(el => el.value.trim()),
-            domicilioResponsablesList: Array.from(document.querySelectorAll('.resp-dom')).map(el => el.value.trim()),
-
-            // Extraemos los IDs de Google Drive usando extractDriveId para limpieza automática
-            dniArchivo1: extractDriveId(document.getElementById('dniArchivo1')?.value),
-            dniArchivo2: extractDriveId(document.getElementById('dniArchivo2')?.value),
-            osFrente1: extractDriveId(document.getElementById('osFrente1')?.value), osDorso1: extractDriveId(document.getElementById('osDorso1')?.value),
-            osFrente2: extractDriveId(document.getElementById('osFrente2')?.value), osDorso2: extractDriveId(document.getElementById('osDorso2')?.value),
-            osFrente3: extractDriveId(document.getElementById('osFrente3')?.value), osDorso3: extractDriveId(document.getElementById('osDorso3')?.value),
-            respFrente1: extractDriveId(document.getElementById('respFrente1')?.value), respDorso1: extractDriveId(document.getElementById('respDorso1')?.value),
-            respFrente2: extractDriveId(document.getElementById('respFrente2')?.value), respDorso2: extractDriveId(document.getElementById('respDorso2')?.value),
-            respFrente3: extractDriveId(document.getElementById('respFrente3')?.value), respDorso3: extractDriveId(document.getElementById('respDorso3')?.value),
-            respFrente4: extractDriveId(document.getElementById('respFrente4')?.value), respDorso4: extractDriveId(document.getElementById('respDorso4')?.value),
-            respFrente5: extractDriveId(document.getElementById('respFrente5')?.value), respDorso5: extractDriveId(document.getElementById('respDorso5')?.value)
-        };
-
-        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveResident', payload: residentData }) });
-        const result = await res.json();
-        
-        if (result.status === 'success') {
-            showToast("Guardado correctamente");
-            currentResidentName = nombreInput; base64ImageToUpload = null; documentsToUpload = {};
-            toggleEditMode(tab, false); window.history.replaceState({}, '', `resident.html?id=${encodeURIComponent(nombreInput)}`);
-            loadResidentData();
-        } else { showToast("Error: " + result.message, true); }
-    } catch (e) { showToast("Error de conexión", true); } 
-    finally { btnSave.disabled = false; loader.classList.add('hidden'); }
-}
-
-// [Descripción: API Call para obtener el archivo de Google Drive en formato Base64 y bypassear el bloqueo de CORS del navegador para visualizar PDFs/Imágenes]
-async function loadDriveImageAsBase64(fileId, inputId) {
-    const imgElement = document.getElementById(`img-${inputId}`);
-    const loaderElement = document.getElementById(`loader-${inputId}`);
-    if (!imgElement || !loaderElement) return;
-    try {
-        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getFileBase64', payload: { fileId: extractDriveId(fileId) } }) });
-        const result = await res.json();
-        if (result.status === 'success') {
-            if (result.data.mimeType.includes('pdf')) {
-                loaderElement.innerHTML = `<i class="fa-solid fa-file-pdf fa-3x" style="color:#e74c3c;"></i><br><small>Es un PDF</small>`;
-            } else {
-                imgElement.src = `data:${result.data.mimeType};base64,${result.data.base64}`;
-                imgElement.onload = () => { loaderElement.style.display = 'none'; imgElement.style.display = 'block'; };
-            }
-        }
-    } catch (e) { loaderElement.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:red;"></i>`; }
-}
-
-// [Descripción: Lee el archivo adjuntado manualmente desde la PC/Móvil del usuario, lo previsualiza de inmediato en el contenedor y lo pone en cola para subirse a Drive al darle a "Guardar"]
-window.handleDocumentUpload = function(input, id) {
-    const f = input.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = ev => {
-        documentsToUpload[id] = { base64: ev.target.result, mimeType: f.type };
-        const c = document.getElementById(`container-${id}`);
-        c.innerHTML = f.type.includes('pdf') ? `<p style="color: #0F9D58; font-weight: bold;"><i class="fa-solid fa-file-pdf fa-2x"></i><br>PDF Listo para guardar.</p>` : `<img src="${ev.target.result}" style="width:100%; max-height:400px; object-fit:contain;">`;
-        showToast("Archivo listo. Guarde los cambios.");
-    }; r.readAsDataURL(f);
-};
-
-// [Descripción: Asignación global de listeners para botones, calculador de edad e inputs de archivos.]
-function setupFormEvents() {
-    document.getElementById('btnEditPerfil').onclick = (e) => { e.preventDefault(); toggleEditMode('perfil', true); };
-    document.getElementById('btnSavePerfil').onclick = (e) => { e.preventDefault(); saveResident('perfil'); };
-    document.getElementById('btnCancelPerfil').onclick = (e) => { e.preventDefault(); toggleEditMode('perfil', false); loadResidentData(); };
-    document.getElementById('btnEditDocs').onclick = (e) => { e.preventDefault(); toggleEditMode('docs', true); };
-    document.getElementById('btnSaveDocs').onclick = (e) => { e.preventDefault(); saveResident('docs'); };
-    document.getElementById('btnCancelDocs').onclick = (e) => { e.preventDefault(); toggleEditMode('docs', false); loadResidentData(); };
-    
-    document.getElementById('btnAddMedico').onclick = () => addMedicoRow('','');
-    document.getElementById('btnAddOs').onclick = () => addOsRow('','','');
-    document.getElementById('btnAddResponsable').onclick = () => addResponsableRow('','','','','');
-    
-    document.getElementById('fechaNacimiento').addEventListener('change', calculateAgeLive);
-    
-    document.getElementById('imageUpload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const r = new FileReader();
-            r.onload = ev => { document.getElementById('profileImage').src = ev.target.result; base64ImageToUpload = { base64: ev.target.result, mimeType: file.type }; };
-            r.readAsDataURL(file);
-        }
-    });
-}
+// [Descripción: Generador HTML de las tarjetas individuales para el visualizador de Drive.]
+function crea
