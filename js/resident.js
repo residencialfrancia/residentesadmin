@@ -24,50 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormEvents();
 });
 
-// [Descripción: Sistema de Auto-ajuste de fuentes. Evita que textos largos (como CUIL, Nombres largos o Domicilios) se oculten o solapen. Reduce gradualmente el tamaño de la letra hasta que encaje perfecto en su caja.]
-window.adjustInputFontSizes = function() {
-    const inputs = document.querySelectorAll('#residentForm input[type="text"], #residentForm input[type="number"]');
-    
-    inputs.forEach(input => {
-        if (input.offsetWidth === 0 || input.clientWidth === 0) return;
-        
-        input.style.fontSize = ''; 
-        let currentSize = parseFloat(window.getComputedStyle(input).fontSize) || 16;
-        
-        const text = input.value || '';
-        if (!text) return;
-        
-        const helper = document.createElement('span');
-        const style = window.getComputedStyle(input);
-        
-        helper.style.fontFamily = style.fontFamily;
-        helper.style.fontWeight = style.fontWeight;
-        helper.style.letterSpacing = style.letterSpacing;
-        helper.style.whiteSpace = 'pre';
-        helper.style.position = 'absolute';
-        helper.style.visibility = 'hidden';
-        
-        document.body.appendChild(helper);
-        
-        const paddingLeft = parseFloat(style.paddingLeft) || 0;
-        const paddingRight = parseFloat(style.paddingRight) || 0;
-        const availableWidth = input.clientWidth - paddingLeft - paddingRight - 12; 
-
-        helper.textContent = text;
-        helper.style.fontSize = currentSize + 'px';
-        
-        while (helper.offsetWidth > availableWidth && currentSize > 11) {
-            currentSize -= 0.5;
-            helper.style.fontSize = currentSize + 'px';
-        }
-        
-        input.style.fontSize = currentSize + 'px';
-        document.body.removeChild(helper);
-    });
-}
-window.addEventListener('resize', () => setTimeout(adjustInputFontSizes, 100));
-
-// [Descripción: Funciones utilitarias para cálculo de edad, extracción de IDs de Drive y formato de fechas.]
+// [Descripción: Funciones utilitarias para cálculo de edad en tiempo real, extracción de IDs de Drive, y notificaciones flotantes.]
 function calculateAgeLive() {
     const dateVal = document.getElementById('fechaNacimiento').value;
     const ageInput = document.getElementById('edad');
@@ -134,11 +91,9 @@ window.switchProfileTab = function(tabName) {
         bd.classList.add('active'); 
         bp.classList.remove('active');
     }
-    
-    setTimeout(adjustInputFontSizes, 100);
 }
 
-// [Descripción: Descarga los datos del residente desde Google Sheets (vía backend).]
+// [Descripción: Descarga los datos del residente desde Google Sheets consultando al backend.]
 async function loadResidentData() {
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
@@ -173,7 +128,7 @@ async function loadResidentData() {
     }
 }
 
-// [Descripción: Inyecta los datos del JSON en los campos del formulario HTML. Carga Apodo, Género y gestiona los arrays dinámicos.]
+// [Descripción: Inyecta los datos del JSON en los campos del formulario HTML y reconstruye todas las filas de arrays.]
 function populateForm(data) {
     document.getElementById('nombre').value = data.nombre || '';
     document.getElementById('apodo').value = data.apodo || '';
@@ -259,12 +214,9 @@ function populateForm(data) {
     document.getElementById('profileImage').src = (data.fotoUrl && data.fotoUrl !== '') ? data.fotoUrl : FALLBACK_IMAGE;
 
     renderDocumentViewers(data);
-    
-    // Auto-ajustar fuentes al terminar de cargar los datos
-    setTimeout(adjustInputFontSizes, 150); 
 }
 
-// [Descripción: Creación de filas dinámicas HTML. Límite máximo establecido para Obras Sociales (3), Médicos (3) y Responsables (5).]
+// [Descripción: Funciones dinámicas para agregar bloques HTML de médicos, obras sociales y responsables.]
 function addMedicoRow(medValue, espValue) {
     const container = document.getElementById('medicosContainer');
     if(container.children.length >= 3) return showToast("Máximo 3 médicos permitidos.");
@@ -281,13 +233,12 @@ function addMedicoRow(medValue, espValue) {
                 <label>Especialidad</label>
                 <input type="text" class="med-esp" value="${espValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove(); setTimeout(adjustInputFontSizes, 50);">
+            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove();">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
     `;
     container.appendChild(row);
-    setTimeout(adjustInputFontSizes, 50);
 }
 
 function addOsRow(osValue, nroValue, dorsoValue) {
@@ -310,13 +261,12 @@ function addOsRow(osValue, nroValue, dorsoValue) {
                 <label>N° Dorso</label>
                 <input type="text" class="os-dorso" value="${dorsoValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
-            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove(); setTimeout(adjustInputFontSizes, 50);">
+            <button type="button" class="btn-remove-os ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.os-row').remove();">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
     `;
     container.appendChild(row);
-    setTimeout(adjustInputFontSizes, 50);
 }
 
 function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
@@ -348,17 +298,16 @@ function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
                     <label>Domicilio</label>
                     <input type="text" class="resp-dom" value="${domVal}" ${!isEditMode ? 'readonly' : ''}>
                 </div>
-                <button type="button" class="btn-remove-resp ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.responsable-block').remove(); setTimeout(adjustInputFontSizes, 50);">
+                <button type="button" class="btn-remove-resp ${!isEditMode ? 'hidden' : ''}" onclick="this.closest('.responsable-block').remove();">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
         </div>
     `;
     container.appendChild(row);
-    setTimeout(adjustInputFontSizes, 50);
 }
 
-// [Descripción: Pestaña Documentos. Genera la barra lateral y los visores grandes inyectando las tarjetas de Google Drive dinámicamente.]
+// [Descripción: Configura la pestaña de Documentación armando la barra lateral y los visores gigantes para los 18 archivos.]
 function renderDocumentViewers(data) {
     const docSections = [
         { id: 'dni', label: 'DNI Residente', icon: 'fa-id-card', f1: 'dniArchivo1', f2: 'dniArchivo2', t1: 'DNI Frente 1', t2: 'DNI Dorso 2' },
@@ -398,7 +347,7 @@ function renderDocumentViewers(data) {
         };
         sidebar.appendChild(btn);
 
-        // Contenedor del Panel
+        // Contenedor del Panel (donde se inyectan las 2 tarjetas visuales)
         const panel = document.createElement('div');
         panel.className = 'doc-panel hidden';
         panel.id = `panel-doc-${sec.id}`;
@@ -430,7 +379,7 @@ function renderDocumentViewers(data) {
     updateDocsSidebarVisibility();
 }
 
-// [Descripción: Generador HTML de las tarjetas individuales para el visualizador de Drive.]
+// [Descripción: Crea el diseño HTML interno de una tarjeta de Google Drive individual.]
 function createOriginalViewerCard(title, fileId, inputId, icon) {
     const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${extractDriveId(fileId)}` : '#';
     const hiddenClass = isEditMode && !isArchivedProfile ? '' : 'hidden'; 
@@ -474,7 +423,7 @@ function createOriginalViewerCard(title, fileId, inputId, icon) {
     `;
 }
 
-// [Descripción: Oculta subpestañas vacías de la barra lateral. Muestra mensaje vacío centrado si no hay nada que ver.]
+// [Descripción: Oculta subpestañas vacías si se está en "modo lectura". Muestra el mensaje vacío si no existe ningún documento.]
 function updateDocsSidebarVisibility() {
     const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
     let firstVisible = null;
@@ -488,9 +437,7 @@ function updateDocsSidebarVisibility() {
         let hasValue = false;
         
         inputs.forEach(inp => { 
-            if (inp.value.trim() !== '') {
-                hasValue = true; 
-            }
+            if (inp.value.trim() !== '') hasValue = true; 
         });
 
         if (isEditMode) {
@@ -520,7 +467,7 @@ function updateDocsSidebarVisibility() {
     }
 }
 
-// [Descripción: Alternador de visualización de paneles en la vista de documentos.]
+// [Descripción: Evento al hacer clic en las pestañas laterales para mostrar sus respectivos documentos.]
 function switchDocSubTab(tabId) {
     const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
     
@@ -539,7 +486,7 @@ function switchDocSubTab(tabId) {
     if (activePanel) activePanel.classList.remove('hidden');
 }
 
-// [Descripción: Controlador Global del Estado de Edición. Activa o desactiva la lectura/escritura de los inputs, botones e interacción en base al estado de la ficha.]
+// [Descripción: Controlador central de UI. Determina qué inputs son editables y muestra/oculta botones de guardado.]
 function toggleEditMode(tab, enable) {
     if (isArchivedProfile) {
         return showToast("Perfil archivado: Solo lectura.", true);
@@ -620,12 +567,9 @@ function toggleEditMode(tab, enable) {
             updateDocsSidebarVisibility(); 
         }
     }
-    
-    // Auto-ajuste visual al cambiar el estado de lectura/escritura
-    setTimeout(adjustInputFontSizes, 100);
 }
 
-// [Descripción: Envío principal de datos a Google Sheets. Recolecta todos los campos sueltos, agrupa las listas dinámicas y recoge los 18 IDs de Drive.]
+// [Descripción: Proceso de guardado. Sube imágenes a Drive, empaca todos los campos del HTML en un JSON masivo y se los envía al backend de Apps Script.]
 async function saveResident(tab) {
     if(isArchivedProfile) return;
     
@@ -663,7 +607,7 @@ async function saveResident(tab) {
             }
         }
 
-        // Subida manual de documentos si hay en cola
+        // Subida manual de documentos
         for (const [inputId, docData] of Object.entries(documentsToUpload)) {
             const docRes = await fetch(API_URL, { 
                 method: 'POST', 
@@ -688,7 +632,7 @@ async function saveResident(tab) {
             }
         }
 
-        // Armado integral del JSON explícito para enviar a Apps Script
+        // Armado del JSON Masivo
         const residentData = {
             nombreViejo: currentResidentName, 
             nombre: nombreInput, 
@@ -720,7 +664,6 @@ async function saveResident(tab) {
             telefonosList: Array.from(document.querySelectorAll('.resp-tel')).map(el => el.value.trim()),
             domicilioResponsablesList: Array.from(document.querySelectorAll('.resp-dom')).map(el => el.value.trim()),
 
-            // Extraemos los 18 IDs de Documentos usando Regex por si pegaron el Link completo
             dniArchivo1: extractDriveId(document.getElementById('dniArchivo1')?.value),
             dniArchivo2: extractDriveId(document.getElementById('dniArchivo2')?.value),
             osFrente1: extractDriveId(document.getElementById('osFrente1')?.value), 
@@ -770,7 +713,7 @@ async function saveResident(tab) {
     }
 }
 
-// [Descripción: Solicitud asíncrona a Google Drive para restaurar un residente desde el perfil.]
+// [Descripción: Función de restauración que se comunica con el Backend para devolver al residente a la lista de activos.]
 async function restoreResidentProfile() {
     if (!confirm(`¿Estás seguro de que deseas restaurar a ${currentResidentName} a la lista de residentes activos?`)) return;
 
@@ -809,7 +752,7 @@ async function restoreResidentProfile() {
     }
 }
 
-// [Descripción: Petición a Drive para renderizar imágenes/PDFs evadiendo políticas de CORS devolviendo Base64.]
+// [Descripción: Petición a Drive para renderizar imágenes/PDFs extrayendo el Base64 puro.]
 async function loadDriveImageAsBase64(fileId, inputId) {
     const imgElement = document.getElementById(`img-${inputId}`);
     const loaderElement = document.getElementById(`loader-${inputId}`);
@@ -841,7 +784,7 @@ async function loadDriveImageAsBase64(fileId, inputId) {
     }
 }
 
-// [Descripción: Lee el archivo desde la PC o celular, lo previsualiza en el recuadro y lo guarda en variable global para subirlo luego.]
+// [Descripción: Pone en cola un archivo seleccionado desde la PC del usuario y genera su previsualización.]
 window.handleDocumentUpload = function(input, id) {
     const f = input.files[0]; 
     if(!f) return;
@@ -862,7 +805,7 @@ window.handleDocumentUpload = function(input, id) {
     r.readAsDataURL(f);
 };
 
-// [Descripción: Eventos globales de botones y carga de imagen de perfil.]
+// [Descripción: Conecta todos los clics y cambios de los elementos HTML con las funciones JavaScript.]
 function setupFormEvents() {
     document.getElementById('btnEditPerfil').onclick = (e) => { e.preventDefault(); toggleEditMode('perfil', true); };
     document.getElementById('btnSavePerfil').onclick = (e) => { e.preventDefault(); saveResident('perfil'); };
@@ -878,16 +821,10 @@ function setupFormEvents() {
     
     document.getElementById('fechaNacimiento').addEventListener('change', calculateAgeLive);
     
-    // Si existe el botón restaurar en el HTML, conectarlo a su función.
     const btnRestore = document.getElementById('btnRestore');
     if (btnRestore) {
         btnRestore.onclick = (e) => { e.preventDefault(); restoreResidentProfile(); };
     }
-    
-    // Auto-escalado de fuente interactivo al teclear
-    document.getElementById('residentForm').addEventListener('input', (e) => {
-        if (e.target.tagName === 'INPUT') adjustInputFontSizes();
-    });
     
     document.getElementById('imageUpload').addEventListener('change', function(e) {
         const file = e.target.files[0];
