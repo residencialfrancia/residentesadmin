@@ -1,4 +1,4 @@
-// [Descripción: Lógica principal del Dashboard. Se integró un diccionario MASIVO que mapea absolutamente todas las columnas de las 5 pestañas de Google Sheets. Se solucionaron los bugs de ordenamiento y se perfeccionó la división visual para la impresión por género.]
+// [Descripción: Lógica principal del Dashboard. Contiene el diccionario completo de todas las columnas (incluyendo Links), la lógica de abreviación de nombres para ganar espacio en la impresión, la división por género, el creador de informes y el algoritmo de ajuste automático de fuentes para A4.]
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
@@ -12,31 +12,94 @@ let currentSortDir = 'asc';
 let currentReportId = 'default';
 let customSelectionArray = []; 
 
-// ================= DICCIONARIO MAESTRO DE COLUMNAS (5 PESTAÑAS) =================
+// ================= UTILIDADES Y FORMATEO =================
+function getArray(arr, idx) { 
+    return (arr && arr[idx] && arr[idx].trim() !== '') ? arr[idx] : '-'; 
+}
+
+function formatFecha(f) { 
+    if(!f) return '-'; 
+    try { return f.includes('T') ? f.split('T')[0] : f; } catch{ return f; } 
+}
+
+function formatGenero(g) {
+    if(!g) return '-';
+    let lg = g.toLowerCase().trim();
+    if(lg.startsWith('m')) return 'Masculino';
+    if(lg.startsWith('f')) return 'Femenino';
+    return g;
+}
+
+function calculateAgeToTurn(f) {
+    if(!f) return '-';
+    let year = 0;
+    if(f.includes('/')) year = parseInt(f.split('/')[2]);
+    else if(f.includes('-')) year = parseInt(f.split('-')[0]);
+    else year = new Date(f).getFullYear();
+    return (new Date().getFullYear() - year) + ' años';
+}
+
+function goToProfile(nombre) { 
+    window.location.href = `resident.html?id=${encodeURIComponent(nombre)}`; 
+}
+
+// [Descripción: Algoritmo para abreviar nombres ("Juan Carlos Perez" -> "Perez, J. C.") para ahorrar espacio vital en la vista de lista y en la impresión A4.]
+function formatNombreAbreviado(nombre) {
+    if (!nombre) return '-';
+    
+    // Si es corto, se deja igual
+    if (nombre.length <= 12) return nombre; 
+    
+    let parts = nombre.trim().split(/\s+/);
+    if (parts.length === 1) return nombre; 
+
+    // Si fue guardado con coma (Ej: "Perez, Juan Carlos")
+    if (nombre.includes(',')) {
+        let splitComma = nombre.split(',');
+        let apellido = splitComma[0].trim();
+        let nombres = splitComma[1].trim().split(/\s+/);
+        let iniciales = nombres.map(n => n.charAt(0).toUpperCase() + '.').join(' ');
+        return apellido + ', ' + iniciales;
+    }
+
+    // Si fue guardado de forma normal ("Juan Carlos Perez")
+    let apellido = parts.pop(); 
+    
+    // Check para conectores de apellidos compuestos típicos en Argentina
+    while (parts.length > 0 && ['de', 'del', 'la', 'las', 'los', 'y', 'san', 'santa', 'di'].includes(parts[parts.length - 1].toLowerCase())) {
+        apellido = parts.pop() + ' ' + apellido;
+    }
+
+    let iniciales = parts.map(p => p.charAt(0).toUpperCase() + '.').join(' ');
+    return apellido + ', ' + iniciales;
+}
+
+// ================= DICCIONARIO MAESTRO DE COLUMNAS =================
 const COLUMNS_DICT = {
     // 1. Datos Personales
-    'nombre': { tab: 'Datos Personales', label: 'Nombre Completo', extract: r => r.nombre },
+    // Al extraer el nombre, si estamos en Vista Lista, aplica la abreviación dinámica
+    'nombre': { tab: 'Datos Personales', label: 'Nombre', extract: r => currentView === 'list' ? formatNombreAbreviado(r.nombre) : r.nombre },
     'numeroSocio': { tab: 'Datos Personales', label: 'N° de Socio', extract: r => r.numeroSocio || '-' },
     'apodo': { tab: 'Datos Personales', label: 'Apodo', extract: r => r.apodo || '-' },
     'fechaNacimiento': { tab: 'Datos Personales', label: 'Fecha Nacimiento', extract: r => formatFecha(r.fechaNacimiento) },
-    'edad': { tab: 'Datos Personales', label: 'Edad Actual', extract: r => r.edad || '-' },
-    'edadCumple': { tab: 'Datos Personales', label: 'Edad a Cumplir', extract: r => calculateAgeToTurn(r.fechaNacimiento) },
+    'edad': { tab: 'Datos Personales', label: 'Edad', extract: r => r.edad || '-' },
+    'edadCumple': { tab: 'Datos Personales', label: 'Cumple', extract: r => calculateAgeToTurn(r.fechaNacimiento) },
     'dni': { tab: 'Datos Personales', label: 'DNI', extract: r => r.dni || '-' },
     'cuil': { tab: 'Datos Personales', label: 'CUIL', extract: r => r.cuil || '-' },
-    'numeroTramite': { tab: 'Datos Personales', label: 'N° de Trámite', extract: r => r.numeroTramite || '-' },
+    'numeroTramite': { tab: 'Datos Personales', label: 'N° Trámite', extract: r => r.numeroTramite || '-' },
     'domicilio': { tab: 'Datos Personales', label: 'Domicilio', extract: r => r.domicilio || '-' },
     'nacionalidad': { tab: 'Datos Personales', label: 'Nacionalidad', extract: r => r.nacionalidad || '-' },
-    'fechaIngreso': { tab: 'Datos Personales', label: 'Fecha Ingreso', extract: r => formatFecha(r.fechaIngreso) },
+    'fechaIngreso': { tab: 'Datos Personales', label: 'Ingreso', extract: r => formatFecha(r.fechaIngreso) },
     'genero': { tab: 'Datos Personales', label: 'Género', extract: r => formatGenero(r.genero) },
 
     // 2. Datos Médicos
     'lugarInternacion': { tab: 'Datos Médicos', label: 'Lugar Internación', extract: r => r.lugarInternacion || '-' },
     'alergias': { tab: 'Datos Médicos', label: 'Alergias', extract: r => r.alergias || '-' },
-    'medicoCabecera': { tab: 'Datos Médicos', label: 'Médico Cabecera 1', extract: r => getArray(r.medicosList, 0) },
+    'medicoCabecera': { tab: 'Datos Médicos', label: 'Médico Cab. 1', extract: r => getArray(r.medicosList, 0) },
     'esp1': { tab: 'Datos Médicos', label: 'Especialidad 1', extract: r => getArray(r.especialidadList, 0) },
-    'med2': { tab: 'Datos Médicos', label: 'Médico Cabecera 2', extract: r => getArray(r.medicosList, 1) },
+    'med2': { tab: 'Datos Médicos', label: 'Médico Cab. 2', extract: r => getArray(r.medicosList, 1) },
     'esp2': { tab: 'Datos Médicos', label: 'Especialidad 2', extract: r => getArray(r.especialidadList, 1) },
-    'med3': { tab: 'Datos Médicos', label: 'Médico Cabecera 3', extract: r => getArray(r.medicosList, 2) },
+    'med3': { tab: 'Datos Médicos', label: 'Médico Cab. 3', extract: r => getArray(r.medicosList, 2) },
     'esp3': { tab: 'Datos Médicos', label: 'Especialidad 3', extract: r => getArray(r.especialidadList, 2) },
 
     // 3. Obra Social
@@ -83,28 +146,28 @@ const COLUMNS_DICT = {
 
     // 5. Links
     'carpetaDrive': { tab: 'Links', label: 'ID Carpeta Drive', extract: r => r.carpetaDrive || '-' },
-    'fotoUrl': { tab: 'Links', label: 'Foto Perfil (Drive)', extract: r => r.fotoUrl ? 'Sí' : 'No' },
-    'dniArchivo1': { tab: 'Links', label: 'DNI 1 Frente', extract: r => r.dniArchivo1 ? 'Cargado' : 'Falta' },
-    'dniArchivo2': { tab: 'Links', label: 'DNI 2 Dorso', extract: r => r.dniArchivo2 ? 'Cargado' : 'Falta' },
+    'fotoUrl': { tab: 'Links', label: 'Foto Perfil', extract: r => r.fotoUrl ? 'Sí' : 'No' },
+    'dniArchivo1': { tab: 'Links', label: 'DNI Frente', extract: r => r.dniArchivo1 ? 'Cargado' : 'Falta' },
+    'dniArchivo2': { tab: 'Links', label: 'DNI Dorso', extract: r => r.dniArchivo2 ? 'Cargado' : 'Falta' },
     'osFrente1': { tab: 'Links', label: 'OS Frente 1', extract: r => r.osFrente1 ? 'Cargado' : 'Falta' },
     'osDorso1': { tab: 'Links', label: 'OS Dorso 1', extract: r => r.osDorso1 ? 'Cargado' : 'Falta' },
     'osFrente2': { tab: 'Links', label: 'OS Frente 2', extract: r => r.osFrente2 ? 'Cargado' : 'Falta' },
     'osDorso2': { tab: 'Links', label: 'OS Dorso 2', extract: r => r.osDorso2 ? 'Cargado' : 'Falta' },
     'osFrente3': { tab: 'Links', label: 'OS Frente 3', extract: r => r.osFrente3 ? 'Cargado' : 'Falta' },
     'osDorso3': { tab: 'Links', label: 'OS Dorso 3', extract: r => r.osDorso3 ? 'Cargado' : 'Falta' },
-    'respFrente1': { tab: 'Links', label: 'DNI Resp Frente 1', extract: r => r.respFrente1 ? 'Cargado' : 'Falta' },
-    'respDorso1': { tab: 'Links', label: 'DNI Resp Dorso 1', extract: r => r.respDorso1 ? 'Cargado' : 'Falta' },
-    'respFrente2': { tab: 'Links', label: 'DNI Resp Frente 2', extract: r => r.respFrente2 ? 'Cargado' : 'Falta' },
-    'respDorso2': { tab: 'Links', label: 'DNI Resp Dorso 2', extract: r => r.respDorso2 ? 'Cargado' : 'Falta' },
-    'respFrente3': { tab: 'Links', label: 'DNI Resp Frente 3', extract: r => r.respFrente3 ? 'Cargado' : 'Falta' },
-    'respDorso3': { tab: 'Links', label: 'DNI Resp Dorso 3', extract: r => r.respDorso3 ? 'Cargado' : 'Falta' },
-    'respFrente4': { tab: 'Links', label: 'DNI Resp Frente 4', extract: r => r.respFrente4 ? 'Cargado' : 'Falta' },
-    'respDorso4': { tab: 'Links', label: 'DNI Resp Dorso 4', extract: r => r.respDorso4 ? 'Cargado' : 'Falta' },
-    'respFrente5': { tab: 'Links', label: 'DNI Resp Frente 5', extract: r => r.respFrente5 ? 'Cargado' : 'Falta' },
-    'respDorso5': { tab: 'Links', label: 'DNI Resp Dorso 5', extract: r => r.respDorso5 ? 'Cargado' : 'Falta' }
+    'respFrente1': { tab: 'Links', label: 'DNI Resp Fr 1', extract: r => r.respFrente1 ? 'Cargado' : 'Falta' },
+    'respDorso1': { tab: 'Links', label: 'DNI Resp Do 1', extract: r => r.respDorso1 ? 'Cargado' : 'Falta' },
+    'respFrente2': { tab: 'Links', label: 'DNI Resp Fr 2', extract: r => r.respFrente2 ? 'Cargado' : 'Falta' },
+    'respDorso2': { tab: 'Links', label: 'DNI Resp Do 2', extract: r => r.respDorso2 ? 'Cargado' : 'Falta' },
+    'respFrente3': { tab: 'Links', label: 'DNI Resp Fr 3', extract: r => r.respFrente3 ? 'Cargado' : 'Falta' },
+    'respDorso3': { tab: 'Links', label: 'DNI Resp Do 3', extract: r => r.respDorso3 ? 'Cargado' : 'Falta' },
+    'respFrente4': { tab: 'Links', label: 'DNI Resp Fr 4', extract: r => r.respFrente4 ? 'Cargado' : 'Falta' },
+    'respDorso4': { tab: 'Links', label: 'DNI Resp Do 4', extract: r => r.respDorso4 ? 'Cargado' : 'Falta' },
+    'respFrente5': { tab: 'Links', label: 'DNI Resp Fr 5', extract: r => r.respFrente5 ? 'Cargado' : 'Falta' },
+    'respDorso5': { tab: 'Links', label: 'DNI Resp Do 5', extract: r => r.respDorso5 ? 'Cargado' : 'Falta' }
 };
 
-// REPORTES PREDEFINIDOS
+// ================= REPORTES PREDEFINIDOS =================
 const PRESET_REPORTS = {
     'default': { title: 'Residentes', cols: ['nombre', 'dni', 'edad', 'numeroSocio', 'obraSocial'] },
     'cumple': { title: 'Cumpleaños', cols: ['numeroSocio', 'nombre', 'fechaNacimiento', 'edadCumple'] },
@@ -113,35 +176,6 @@ const PRESET_REPORTS = {
 };
 
 let customReports = JSON.parse(localStorage.getItem('customReports')) || {};
-
-// ================= UTILIDADES =================
-function getArray(arr, idx) { return (arr && arr[idx] && arr[idx].trim() !== '') ? arr[idx] : '-'; }
-
-function formatFecha(f) { 
-    if(!f) return '-'; 
-    try { return f.includes('T') ? f.split('T')[0] : f; } catch{ return f; } 
-}
-
-function formatGenero(g) {
-    if(!g) return '-';
-    let lg = g.toLowerCase().trim();
-    if(lg.startsWith('m')) return 'Masculino';
-    if(lg.startsWith('f')) return 'Femenino';
-    return g;
-}
-
-function calculateAgeToTurn(f) {
-    if(!f) return '-';
-    let year = 0;
-    if(f.includes('/')) year = parseInt(f.split('/')[2]);
-    else if(f.includes('-')) year = parseInt(f.split('-')[0]);
-    else year = new Date(f).getFullYear();
-    return (new Date().getFullYear() - year) + ' años';
-}
-
-function goToProfile(nombre) { 
-    window.location.href = `resident.html?id=${encodeURIComponent(nombre)}`; 
-}
 
 // ================= INICIALIZACIÓN =================
 document.addEventListener('DOMContentLoaded', () => {
@@ -207,7 +241,7 @@ function updateViewButtons() {
     document.getElementById('btnViewList').classList.toggle('active', currentView === 'list');
 }
 
-// ================= FETCH =================
+// ================= FETCH AL SERVIDOR =================
 async function fetchActivos() {
     const loader = document.getElementById('loaderActivos'); 
     loader.classList.remove('hidden');
@@ -221,7 +255,7 @@ async function fetchActivos() {
             applyFiltersAndRender(); 
         } 
     } catch (e) {
-        console.error(e);
+        console.error("Error cargando activos", e);
     } finally { 
         loader.classList.add('hidden'); 
     }
@@ -240,7 +274,7 @@ async function fetchArchivados() {
             renderGrid(globalArchivados, 'gridArchivados', true); 
         }
     } catch (e) {
-        console.error(e);
+        console.error("Error cargando archivados", e);
     } finally { 
         loader.classList.add('hidden'); 
     }
@@ -255,8 +289,9 @@ function applyFiltersAndRender() {
     );
 
     filtered.sort((a, b) => {
-        let valA = COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(a) : a[currentSortField];
-        let valB = COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(b) : b[currentSortField];
+        // En el sort usamos r.nombre puro (no el abreviado) para que el orden A-Z no se rompa
+        let valA = currentSortField === 'nombre' ? a.nombre : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(a) : a[currentSortField]);
+        let valB = currentSortField === 'nombre' ? b.nombre : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(b) : b[currentSortField]);
         
         valA = valA ? valA.toString().toLowerCase() : ''; 
         valB = valB ? valB.toString().toLowerCase() : '';
@@ -282,7 +317,7 @@ function applyFiltersAndRender() {
     }
 }
 
-// ================= VISTA LISTA / GÉNERO DIVIDIDO / AUTO-ESCALA IMPRESIÓN =================
+// ================= VISTA LISTA / GÉNERO DIVIDIDO / AUTO-ESCALA =================
 function renderList(data) {
     const listContainer = document.getElementById('listActivos');
     listContainer.innerHTML = '';
@@ -292,13 +327,13 @@ function renderList(data) {
     
     document.getElementById('printTitle').textContent = reportDef.title;
     
-    // Auto-ajuste de la fuente baseada en la cantidad de columnas seleccionadas (para Impresión A4)
-    let fontSize = '13px';
-    if(activeCols.length > 5) fontSize = '11px';
-    if(activeCols.length > 7) fontSize = '9px';
-    if(activeCols.length > 10) fontSize = '8px';
+    // Auto-ajuste de fuente. Se aumentó sutilmente la fuente base para la impresión
+    let fontSize = '13.5px';
+    if(activeCols.length > 5) fontSize = '11.5px';
+    if(activeCols.length > 7) fontSize = '10px';
+    if(activeCols.length > 10) fontSize = '9px';
 
-    // Orden Dinámico: Mover columna de orden a la izquierda (después del nombre)
+    // Orden Dinámico: Mover la columna a la izquierda
     if (currentReportId === 'default' && currentSortField !== 'nombre' && currentSortField !== 'genero') {
         activeCols = ['nombre', currentSortField];
         
@@ -310,7 +345,7 @@ function renderList(data) {
         });
     }
 
-    // DIVISIÓN POR GÉNERO (Hombres a un lado, Mujeres al otro)
+    // DIVISIÓN POR GÉNERO
     if (currentSortField === 'genero') {
         let males = data.filter(r => formatGenero(r.genero) === 'Masculino');
         let females = data.filter(r => formatGenero(r.genero) === 'Femenino');
@@ -326,7 +361,7 @@ function renderList(data) {
     }
 }
 
-// Constructor de Tablas (apto para imprimir y hacer clic)
+// Generador de la Tabla HTML
 function buildTableHtml(data, cols, title, fontSize) {
     let html = title ? `<div class="gender-column"><h3 class="gender-title">${title}</h3>` : '';
     html += `<table class="data-table" style="font-size: ${fontSize};"><thead><tr><th>#</th>`;
@@ -361,7 +396,6 @@ window.openCustomReportModal = function() {
     container.innerHTML = ''; 
     customSelectionArray = [];
     
-    // Inyecta las pestañas y todos sus checkboxes basados en el DICCIONARIO MAESTRO
     const tabs = [...new Set(Object.values(COLUMNS_DICT).map(item => item.tab))];
     
     tabs.forEach(tabName => {
@@ -436,7 +470,7 @@ function loadCustomReportsToDropdown() {
     });
 }
 
-// ================= IMPRESIÓN =================
+// ================= IMPRESIÓN A4 =================
 window.executePrint = function() {
     const wasGrid = currentView === 'grid';
     
@@ -450,6 +484,7 @@ window.executePrint = function() {
     
     setTimeout(() => { 
         window.print(); 
+        
         if(wasGrid) { 
             currentView = 'grid'; 
             applyFiltersAndRender(); 
@@ -457,7 +492,7 @@ window.executePrint = function() {
     }, 500); 
 }
 
-// ================= VISTA MOSAICO =================
+// ================= VISTA MOSAICO (TARJETAS) =================
 function renderGrid(data, containerId, isArchived) {
     const grid = document.getElementById(containerId); 
     grid.innerHTML = '';
@@ -490,8 +525,8 @@ function renderGrid(data, containerId, isArchived) {
 
         const imgSrc = res.fotoUrl && res.fotoUrl !== '' ? res.fotoUrl : FALLBACK_IMAGE;
         const actionBtnHtml = !isArchived 
-            ? `<button type="button" class="btn-archive-card" data-action="archive"><i class="fa-solid fa-box-archive"></i></button>` 
-            : `<button type="button" class="btn-archive-card" data-action="restore"><i class="fa-solid fa-box-open"></i></button>`;
+            ? `<button type="button" class="btn-archive-card" data-action="archive" title="Archivar"><i class="fa-solid fa-box-archive"></i></button>` 
+            : `<button type="button" class="btn-archive-card" data-action="restore" title="Restaurar"><i class="fa-solid fa-box-open"></i></button>`;
 
         card.innerHTML = `
             ${actionBtnHtml}
@@ -517,7 +552,7 @@ function renderGrid(data, containerId, isArchived) {
                 <div class="info-row" style="flex-direction: column; gap: 8px; margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
                     <span style="color: var(--primary-blue); font-weight: 600;"><i class="fa-solid fa-notes-medical"></i> Obras Sociales:</span>
                     ${(res.obrasSociales && res.obrasSociales.length > 0 && res.obrasSociales[0] !== "") 
-                        ? res.obrasSociales.map((os, idx) => `<div style="display:flex;justify-content:space-between;font-size:0.9rem;padding:4px 0;"><span>${os}</span><strong>${res.numerosOs[idx] || 'S/N'}</strong></div>`).join('') 
+                        ? res.obrasSociales.map((os, idx) => `<div style="display:flex;justify-content:space-between;font-size:0.9rem;padding:4px 0;"><span style="word-break: break-word; flex: 1; padding-right: 10px;">${os}</span><strong>${res.numerosOs[idx] || 'S/N'}</strong></div>`).join('') 
                         : '<div style="font-size: 0.9rem; color: #888;">Sin cobertura</div>'
                     }
                 </div>
