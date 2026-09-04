@@ -1,4 +1,4 @@
-<!-- [Descripción: Estructura HTML completa del Perfil de Residentes. Incluye diseño minimalista, el intercambio dinámico de la fila de nombres (Lectura: 1 caja vs Edición: 4 cajas), los campos de Apodo y Género, la división 50/50 para Médicos y Obras Sociales, y el contenedor de Documentación con la barra lateral.] -->
+<!-- [Descripción: Estructura HTML completa del Perfil de Residentes. Incluye diseño minimalista, el intercambio dinámico de la fila de nombres (Lectura: 1 caja vs Edición: 4 cajas), los campos de Apodo y Género, la división 50/50 compacta para Médicos y Obras Sociales. Se restauró estrictamente el diseño de "pestañas de carpeta solapadas" sobre el contenedor principal azul.] -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,16 +14,11 @@
 
     <main class="profile-container">
         
-        <!-- BARRA SUPERIOR INTEGRADA (Botón Volver + Pestañas + Badge) -->
-        <div class="profile-top-bar">
+        <!-- BARRA SUPERIOR (Solo Botón Volver y Badge de Archivado) -->
+        <div class="profile-top-bar" style="border-bottom: none; margin-bottom: 15px;">
             <a href="index.html" class="btn-back-sleek" title="Volver al Inicio">
                 <i class="fa-solid fa-arrow-left"></i>
             </a>
-            
-            <div class="profile-tabs-group">
-                <button type="button" id="btnTabPerfil" class="profile-tab active" onclick="switchProfileTab('perfil')">Información del Perfil</button>
-                <button type="button" id="btnTabDocs" class="profile-tab" onclick="switchProfileTab('docs')">Documentación</button>
-            </div>
             
             <span id="statusBadge" class="status-badge hidden">ARCHIVADO</span>
         </div>
@@ -36,15 +31,20 @@
             <p>Procesando datos...</p>
         </div>
 
-        <!-- CONTENEDOR PRINCIPAL DEL PERFIL -->
+        <!-- PESTAÑAS TIPO CARPETA (Solapadas sobre el contenedor azul) -->
+        <div class="profile-tabs-group" style="background: transparent; box-shadow: none; padding: 0; gap: 5px; margin-bottom: 0; padding-left: 20px;">
+            <button type="button" id="btnTabPerfil" class="profile-tab active" onclick="switchProfileTab('perfil')" style="border-radius: 8px 8px 0 0; border-bottom: none;">Información del Perfil</button>
+            <button type="button" id="btnTabDocs" class="profile-tab" onclick="switchProfileTab('docs')" style="border-radius: 8px 8px 0 0; border-bottom: none;">Documentación</button>
+        </div>
+
+        <!-- CONTENEDOR PRINCIPAL DEL FORMULARIO -->
         <div id="residentForm" class="profile-form readonly-mode">
 
             <!-- ======================================================= -->
             <!-- PESTAÑA: INFO PERFIL (Fondo azul principal)             -->
             <!-- ======================================================= -->
-            <div id="tab-perfil" class="tab-content-wrapper">
+            <div id="tab-perfil" class="tab-content-wrapper" style="border-top-left-radius: 0;">
                 
-                <!-- SECCIÓN 1: DATOS PERSONALES -->
                 <section class="profile-section section-1">
                     <div class="top-info-wrapper" style="display: flex; gap: 2rem; width: 100%; align-items: flex-start; flex-wrap: wrap;">
                         
@@ -231,7 +231,7 @@
             <!-- ======================================================= -->
             <!-- PESTAÑA: DOCUMENTACIÓN (Contenedor Blanco)              -->
             <!-- ======================================================= -->
-            <div id="tab-documentacion" class="hidden tab-content-wrapper" style="background: transparent; padding: 0; box-shadow: none;">
+            <div id="tab-documentacion" class="hidden tab-content-wrapper" style="background: transparent; padding: 0; box-shadow: none; margin-top: 20px;">
                 
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; width: 100%;">
                     <button id="btnEditDocs" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Editar Documentos</button>
