@@ -1,4 +1,4 @@
-<!-- [Descripción: Estructura HTML completa del Perfil de Residentes. Incluye diseño minimalista, agrupación compacta de campos (Nombre, Apodo, Socio), división 50/50 para Médicos y Obras Sociales, y el contenedor de Documentación preparado para la barra lateral y el mensaje de vacío centrado.] -->
+<!-- [Descripción: Estructura HTML completa del Perfil de Residentes. Incluye diseño minimalista, el intercambio dinámico de la fila de nombres (Lectura: 1 caja vs Edición: 4 cajas), los campos de Apodo y Género, la división 50/50 para Médicos y Obras Sociales, y el contenedor de Documentación con la barra lateral.] -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -80,12 +80,37 @@
                         <!-- Columna Derecha: FORMULARIO DE DATOS -->
                         <div class="info-column" style="flex: 1; display: flex; flex-direction: column; gap: 15px; justify-content: flex-start; min-width: 300px;">
                             
-                            <!-- Fila 1: Nombre Completo, Apodo, Número de Socio -->
-                            <div class="form-row super-text" style="margin-bottom: 0;">
-                                <div class="form-group flex-2" style="min-width: 250px;">
+                            <!-- INTERCAMBIO DE NOMBRES: LECTURA VS EDICIÓN -->
+                            <!-- Fila Visible solo en Modo Lectura -->
+                            <div class="form-row super-text" id="rowNombreLectura" style="margin-bottom: 0;">
+                                <div class="form-group full-width">
                                     <label>Nombre Completo</label>
-                                    <input type="text" id="nombre" name="nombre" required readonly>
+                                    <input type="text" id="nombreCompleto" readonly>
                                 </div>
+                            </div>
+
+                            <!-- Fila Visible solo en Modo Edición (4 Cajas) -->
+                            <div class="form-row" id="rowNombreEdicion" style="margin-bottom: 0; display: none;">
+                                <div class="form-group flex-1" style="min-width: 120px;">
+                                    <label>Apellido</label>
+                                    <input type="text" id="apellido">
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 120px;">
+                                    <label>Seg. Apellidos</label>
+                                    <input type="text" id="segundoApellido">
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 120px;">
+                                    <label>Nombre Pila</label>
+                                    <input type="text" id="nombrePila">
+                                </div>
+                                <div class="form-group flex-1" style="min-width: 120px;">
+                                    <label>Seg. Nombres</label>
+                                    <input type="text" id="segundoNombre">
+                                </div>
+                            </div>
+                            
+                            <!-- Fila: Apodo y Número de Socio -->
+                            <div class="form-row medium-text" style="margin-bottom: 0;">
                                 <div class="form-group flex-1" style="min-width: 120px;">
                                     <label>Apodo</label>
                                     <input type="text" id="apodo" name="apodo" readonly>
@@ -96,7 +121,7 @@
                                 </div>
                             </div>
 
-                            <!-- Fila 2: Fecha Nacimiento, Edad, DNI, CUIL, Trámite -->
+                            <!-- Fila: Fecha Nacimiento, Edad, DNI, CUIL, Trámite -->
                             <div class="form-row medium-text" style="margin-bottom: 0;">
                                 <div class="form-group flex-1" style="min-width: 140px;">
                                     <label>Fecha Nacimiento</label>
@@ -120,7 +145,7 @@
                                 </div>
                             </div>
 
-                            <!-- Fila 3: Fecha Ingreso, Género, Nacionalidad, Domicilio -->
+                            <!-- Fila: Fecha Ingreso, Género, Nacionalidad, Domicilio -->
                             <div class="form-row medium-text" style="margin-bottom: 0;">
                                 <div class="form-group flex-1" style="min-width: 130px;">
                                     <label>Fecha Ingreso</label>
@@ -132,7 +157,6 @@
                                         <option value=""></option>
                                         <option value="Masculino">Masculino</option>
                                         <option value="Femenino">Femenino</option>
-                                        <option value="Otro">Otro</option>
                                     </select>
                                 </div>
                                 <div class="form-group flex-1" style="min-width: 150px;">
