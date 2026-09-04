@@ -1,5 +1,4 @@
-// [Descripción: Lógica principal del Dashboard. Contiene el diccionario completo de todas las columnas (incluyendo Links), la lógica de abreviación de nombres para ganar espacio en la impresión, la división por género, el creador de informes y el algoritmo de ajuste automático de fuentes para A4.]
-
+// [Descripción: Variables globales e inicialización del Dashboard. Asegúrate de que el API_URL coincida con tu Nueva Implementación de Apps Script.]
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
@@ -13,13 +12,18 @@ let currentReportId = 'default';
 let customSelectionArray = []; 
 
 // ================= UTILIDADES Y FORMATEO =================
+// [Descripción: Funciones de limpieza de datos para evitar errores si un campo está vacío en Google Sheets.]
 function getArray(arr, idx) { 
     return (arr && arr[idx] && arr[idx].trim() !== '') ? arr[idx] : '-'; 
 }
 
 function formatFecha(f) { 
     if(!f) return '-'; 
-    try { return f.includes('T') ? f.split('T')[0] : f; } catch{ return f; } 
+    try { 
+        return f.includes('T') ? f.split('T')[0] : f; 
+    } catch { 
+        return f; 
+    } 
 }
 
 function formatGenero(g) {
@@ -33,52 +37,27 @@ function formatGenero(g) {
 function calculateAgeToTurn(f) {
     if(!f) return '-';
     let year = 0;
-    if(f.includes('/')) year = parseInt(f.split('/')[2]);
-    else if(f.includes('-')) year = parseInt(f.split('-')[0]);
-    else year = new Date(f).getFullYear();
+    
+    if(f.includes('/')) {
+        year = parseInt(f.split('/')[2]);
+    } else if(f.includes('-')) {
+        year = parseInt(f.split('-')[0]);
+    } else {
+        year = new Date(f).getFullYear();
+    }
+    
     return (new Date().getFullYear() - year) + ' años';
 }
 
-function goToProfile(nombre) { 
-    window.location.href = `resident.html?id=${encodeURIComponent(nombre)}`; 
-}
-
-// [Descripción: Algoritmo para abreviar nombres ("Juan Carlos Perez" -> "Perez, J. C.") para ahorrar espacio vital en la vista de lista y en la impresión A4.]
-function formatNombreAbreviado(nombre) {
-    if (!nombre) return '-';
-    
-    // Si es corto, se deja igual
-    if (nombre.length <= 12) return nombre; 
-    
-    let parts = nombre.trim().split(/\s+/);
-    if (parts.length === 1) return nombre; 
-
-    // Si fue guardado con coma (Ej: "Perez, Juan Carlos")
-    if (nombre.includes(',')) {
-        let splitComma = nombre.split(',');
-        let apellido = splitComma[0].trim();
-        let nombres = splitComma[1].trim().split(/\s+/);
-        let iniciales = nombres.map(n => n.charAt(0).toUpperCase() + '.').join(' ');
-        return apellido + ', ' + iniciales;
-    }
-
-    // Si fue guardado de forma normal ("Juan Carlos Perez")
-    let apellido = parts.pop(); 
-    
-    // Check para conectores de apellidos compuestos típicos en Argentina
-    while (parts.length > 0 && ['de', 'del', 'la', 'las', 'los', 'y', 'san', 'santa', 'di'].includes(parts[parts.length - 1].toLowerCase())) {
-        apellido = parts.pop() + ' ' + apellido;
-    }
-
-    let iniciales = parts.map(p => p.charAt(0).toUpperCase() + '.').join(' ');
-    return apellido + ', ' + iniciales;
+function goToProfile(nombreCompletoAncla) { 
+    window.location.href = `resident.html?id=${encodeURIComponent(nombreCompletoAncla)}`; 
 }
 
 // ================= DICCIONARIO MAESTRO DE COLUMNAS =================
+// [Descripción: Mapeo exacto de las 63 columnas posibles. Se eliminó la abreviación de nombres y ahora usa directamente "nombreCorto" (Apellido + Nombre Pila) como solicitaste para los listados e informes.]
 const COLUMNS_DICT = {
     // 1. Datos Personales
-    // Al extraer el nombre, si estamos en Vista Lista, aplica la abreviación dinámica
-    'nombre': { tab: 'Datos Personales', label: 'Nombre', extract: r => currentView === 'list' ? formatNombreAbreviado(r.nombre) : r.nombre },
+    'nombre': { tab: 'Datos Personales', label: 'Nombre Completo', extract: r => r.nombreCorto || r.nombre },
     'numeroSocio': { tab: 'Datos Personales', label: 'N° de Socio', extract: r => r.numeroSocio || '-' },
     'apodo': { tab: 'Datos Personales', label: 'Apodo', extract: r => r.apodo || '-' },
     'fechaNacimiento': { tab: 'Datos Personales', label: 'Fecha Nacimiento', extract: r => formatFecha(r.fechaNacimiento) },
@@ -144,7 +123,7 @@ const COLUMNS_DICT = {
     'dniR5': { tab: 'Familiares y Responsables', label: 'DNI Resp 5', extract: r => getArray(r.dniResponsablesList, 4) },
     'domR5': { tab: 'Familiares y Responsables', label: 'Domicilio Resp 5', extract: r => getArray(r.domicilioResponsablesList, 4) },
 
-    // 5. Links
+    // 5. Links y Drive
     'carpetaDrive': { tab: 'Links', label: 'ID Carpeta Drive', extract: r => r.carpetaDrive || '-' },
     'fotoUrl': { tab: 'Links', label: 'Foto Perfil', extract: r => r.fotoUrl ? 'Sí' : 'No' },
     'dniArchivo1': { tab: 'Links', label: 'DNI Frente', extract: r => r.dniArchivo1 ? 'Cargado' : 'Falta' },
@@ -186,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchArchivados();
 });
 
+// [Descripción: Lógica de pestañas principales (Activos vs Archivados)]
 function setupTabs() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -289,9 +269,9 @@ function applyFiltersAndRender() {
     );
 
     filtered.sort((a, b) => {
-        // En el sort usamos r.nombre puro (no el abreviado) para que el orden A-Z no se rompa
-        let valA = currentSortField === 'nombre' ? a.nombre : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(a) : a[currentSortField]);
-        let valB = currentSortField === 'nombre' ? b.nombre : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(b) : b[currentSortField]);
+        // En el sort usamos r.nombre completo u original (para que Apellido respete la A-Z de forma estricta)
+        let valA = currentSortField === 'nombre' ? a.apellido : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(a) : a[currentSortField]);
+        let valB = currentSortField === 'nombre' ? b.apellido : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(b) : b[currentSortField]);
         
         valA = valA ? valA.toString().toLowerCase() : ''; 
         valB = valB ? valB.toString().toLowerCase() : '';
@@ -327,13 +307,13 @@ function renderList(data) {
     
     document.getElementById('printTitle').textContent = reportDef.title;
     
-    // Auto-ajuste de fuente. Se aumentó sutilmente la fuente base para la impresión
+    // Auto-ajuste de la fuente basada en la cantidad de columnas (Ideal para impresión A4)
     let fontSize = '13.5px';
     if(activeCols.length > 5) fontSize = '11.5px';
     if(activeCols.length > 7) fontSize = '10px';
     if(activeCols.length > 10) fontSize = '9px';
 
-    // Orden Dinámico: Mover la columna a la izquierda
+    // Orden Dinámico: Mover la columna ordenada al principio (después del nombre)
     if (currentReportId === 'default' && currentSortField !== 'nombre' && currentSortField !== 'genero') {
         activeCols = ['nombre', currentSortField];
         
@@ -345,7 +325,7 @@ function renderList(data) {
         });
     }
 
-    // DIVISIÓN POR GÉNERO
+    // DIVISIÓN POR GÉNERO (Renderiza dos tablas en paralelo)
     if (currentSortField === 'genero') {
         let males = data.filter(r => formatGenero(r.genero) === 'Masculino');
         let females = data.filter(r => formatGenero(r.genero) === 'Femenino');
@@ -361,7 +341,7 @@ function renderList(data) {
     }
 }
 
-// Generador de la Tabla HTML
+// [Descripción: Constructor HTML de la tabla. Al hacer clic en la fila tr, redirige al perfil usando el nombre original como ancla.]
 function buildTableHtml(data, cols, title, fontSize) {
     let html = title ? `<div class="gender-column"><h3 class="gender-title">${title}</h3>` : '';
     html += `<table class="data-table" style="font-size: ${fontSize};"><thead><tr><th>#</th>`;
@@ -376,6 +356,7 @@ function buildTableHtml(data, cols, title, fontSize) {
         html += `<tr><td colspan="${cols.length + 1}" style="text-align:center;">No hay residentes</td></tr>`;
     } else {
         data.forEach((res, idx) => {
+            // El click en la fila lleva al perfil usando el Nombre Completo original (ancla)
             html += `<tr onclick="goToProfile('${res.nombre.replace(/'/g, "\\'")}')"><td>${idx + 1}</td>`;
             cols.forEach(c => { 
                 if(COLUMNS_DICT[c]) html += `<td>${COLUMNS_DICT[c].extract(res)}</td>`; 
@@ -470,7 +451,7 @@ function loadCustomReportsToDropdown() {
     });
 }
 
-// ================= IMPRESIÓN A4 =================
+// ================= IMPRESIÓN =================
 window.executePrint = function() {
     const wasGrid = currentView === 'grid';
     
@@ -493,6 +474,7 @@ window.executePrint = function() {
 }
 
 // ================= VISTA MOSAICO (TARJETAS) =================
+// [Descripción: Visualización en tarjetas. Muestra el "nombreCorto" para ser estético, pero el click utiliza el nombre completo para abrir el perfil correcto.]
 function renderGrid(data, containerId, isArchived) {
     const grid = document.getElementById(containerId); 
     grid.innerHTML = '';
@@ -533,7 +515,7 @@ function renderGrid(data, containerId, isArchived) {
             <div class="card-header">
                 <img src="${imgSrc}" class="card-img" onerror="this.src='${FALLBACK_IMAGE}'">
                 <div class="card-title">
-                    <h3>${res.nombre}</h3>
+                    <h3>${res.nombreCorto || res.nombre}</h3>
                 </div>
             </div>
             <div class="card-body">
