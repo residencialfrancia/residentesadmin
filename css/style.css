@@ -83,7 +83,7 @@ body { background-color: var(--bg-main); color: var(--text-main); line-height: 1
 .data-table tr { cursor: pointer; }
 .data-table tr:hover td { background-color: #eaf1f8; }
 
-/* Para que la columna de # no ocupe lugar excesivo */
+/* Para que la columna de # no ocupe lugar excesivo en pantalla */
 .data-table th:first-child, .data-table td:first-child { 
     font-weight: bold; 
     color: var(--text-muted); 
@@ -130,8 +130,6 @@ body { background-color: var(--bg-main); color: var(--text-main); line-height: 1
 .form-group label { 
     font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 2px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
 }
-
-/* La letra de input ya no se achica forzosamente, mantiene su rem constante */
 .form-group input, .form-group select { 
     padding: 0.6rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; transition: var(--transition); background: var(--white); outline: none; width: 100%; 
 }
@@ -145,7 +143,6 @@ body { background-color: var(--bg-main); color: var(--text-main); line-height: 1
 .readonly-mode .medium-text input { font-size: 1.15rem; font-weight: 600; color: #34495e; }
 
 /* ======== BLOQUES DINÁMICOS COMPACTOS ======== */
-/* Filas compactas para médicos y obra social (flex-wrap: nowrap en HTML) */
 .compact-row { background: #f0f4f8; padding: 12px 15px; border-radius: var(--radius-md); border: 1px solid var(--border-color); border-left: 5px solid var(--primary-blue); transition: var(--transition); display: flex; align-items: flex-end; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px; }
 .compact-row:hover { border-color: var(--primary-blue); box-shadow: var(--shadow-sm); }
 
@@ -155,13 +152,12 @@ body { background-color: var(--bg-main); color: var(--text-main); line-height: 1
 .btn-remove-os, .btn-remove-resp { background: var(--danger); color: white; border: none; border-radius: var(--radius-md); width: 40px; height: 40px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: var(--transition); }
 .btn-remove-os:hover, .btn-remove-resp:hover { opacity: 0.9; transform: scale(1.05); }
 
-/* ======== CARGA Y MODALES NATIVOS (SCROLLABLE) ======== */
+/* ======== CARGA Y MODALES NATIVOS (SCROLL) ======== */
 .loader-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; }
 .spinner { width: 50px; height: 50px; border: 5px solid var(--border-color); border-top-color: var(--primary-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .hidden { display: none !important; }
 
-/* Comportamiento nativo del modal para permitir que se desplace junto con el resto de la página */
 .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; }
 .modal.show { display: block; }
 .modal-content { background: var(--white); padding: 2rem; border-radius: var(--radius-lg); width: 95%; max-width: 500px; margin: 50px auto; box-shadow: var(--shadow-md); animation: slideUp 0.3s ease; }
@@ -175,7 +171,6 @@ body { background-color: var(--bg-main); color: var(--text-main); line-height: 1
 .toast.error { background: var(--danger); }
 
 /* ======== MODAL REPORTES PERSONALIZADOS ======== */
-/* Sin topes de altura para que fluya hacia abajo */
 .report-tabs-container { padding: 15px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #fdfdfd; margin-bottom: 10px; }
 .report-tab-group { margin-bottom: 20px; }
 .report-tab-title { font-weight: 700; color: var(--primary-blue); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px; font-size: 0.95rem; text-transform: uppercase; }
@@ -197,7 +192,6 @@ body { background-color: var(--bg-main); color: var(--text-main); line-height: 1
 .docs-tab-btn:hover { background: #f8f9fa; color: var(--primary-blue); }
 .docs-tab-btn.active { background: #eff4fa; color: var(--primary-blue); font-weight: 700; border-left: 4px solid var(--primary-blue); border-radius: 0 6px 6px 0; }
 
-/* Estado vacío centrado */
 .docs-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; width: 100%; color: var(--text-muted); text-align: center; margin: 0 auto; }
 .docs-empty-state i { font-size: 3.5rem; margin-bottom: 15px; color: #dfe6e9; }
 
@@ -226,6 +220,7 @@ body { background-color: var(--bg-main); color: var(--text-main); line-height: 1
    REGLAS DE IMPRESIÓN A4 VERTICAL ESTRICTAS
    ========================================================================== */
 @media print {
+    /* Margin nativo borra URL y fecha por defecto del navegador */
     @page { size: A4 portrait; margin: 10mm; } 
     
     body { 
@@ -234,29 +229,46 @@ body { background-color: var(--bg-main); color: var(--text-main); line-height: 1
         print-color-adjust: exact; 
     }
     
+    /* Ocultar Interfaz de Usuario de Navegación */
     .main-header, .tabs-nav, .controls-section, .advanced-toolbar, .modal, .toast, .profile-top-bar { display: none !important; }
     .dashboard-container { padding: 0 !important; margin: 0 !important; box-shadow: none !important; max-width: 100% !important; }
     
+    /* Mostrar cabecera de impresión */
     .print-header { display: flex !important; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; }
-    .print-header h2 { margin: 0; font-size: 18px; color: black; text-transform: uppercase; }
+    .print-header h2 { 
+        margin: 0; 
+        font-size: 18px; 
+        color: black; 
+        text-transform: uppercase; 
+        white-space: nowrap !important; /* Mantiene el título en una sola línea */
+    }
     .print-logo { height: 40px; width: auto; object-fit: contain; }
 
+    /* Estructura de la Tabla A4 */
     .list-container { padding: 0 !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; background: transparent !important; }
-    .data-table { border: 2px solid black; table-layout: fixed; width: 100%; word-wrap: break-word; }
-    .data-table th { background: #e0e0e0 !important; color: black !important; border: 1px solid black !important; font-weight: bold; }
-    .data-table td { border: 1px solid black !important; color: black !important; }
+    
+    /* table-layout: auto permite que el ancho de la columna se ajuste naturalmente al texto */
+    .data-table { border: 2px solid black; table-layout: auto; width: 100%; }
+    
+    /* white-space: nowrap fuerza que todos los datos y encabezados se queden en UNA SOLA LÍNEA */
+    .data-table th { background: #e0e0e0 !important; color: black !important; border: 1px solid black !important; font-weight: bold; white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; }
+    .data-table td { border: 1px solid black !important; color: black !important; white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; }
     .data-table tr { page-break-inside: avoid; }
     
-    /* El 1% estricto garantiza que la columna # se encoja para dejar espacio al resto de los datos en A4 */
+    /* Solución de superposición: Fuerza que la columna del hashtag # se encoja al mínimo, con padding lateral para que no se superponga con el nombre */
     .data-table th:first-child, 
     .data-table td:first-child { 
         width: 1% !important; 
         white-space: nowrap !important; 
         text-align: center !important; 
+        padding-right: 10px !important;
+        padding-left: 10px !important;
     }
     
+    /* Género Split impresión */
     .gender-split { flex-direction: row; display: flex; gap: 10px; }
     .gender-title { background: #e0e0e0 !important; color: black !important; border: 2px solid black; border-bottom: none; }
     
+    /* Ocultar Grillas de Tarjetas */
     #gridActivos, #gridArchivados { display: none !important; }
 }
