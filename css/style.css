@@ -36,6 +36,7 @@ body {
 /* ==========================================================================
    NAVEGACIÓN DASHBOARD
    ========================================================================== */
+/* [Descripción: Estilos para las pestañas principales (Activos y Archivados) en la página de inicio.] */
 .tabs-nav { 
     display: flex; justify-content: center; background: var(--white); box-shadow: var(--shadow-sm); 
     padding: 0 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; flex-wrap: wrap; 
@@ -54,6 +55,7 @@ body {
 /* ==========================================================================
    CONTROLES Y BARRA AVANZADA (DASHBOARD)
    ========================================================================== */
+/* [Descripción: Buscadores, filtros y la nueva barra de herramientas avanzada que contiene las opciones de Mosaico, Lista, Ordenamiento y Reportes.] */
 .dashboard-container { max-width: 1400px; margin: 0 auto 2rem; padding: 0 20px; }
 .controls-section { 
     display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin-bottom: 1.5rem; 
@@ -103,6 +105,7 @@ body {
 /* ==========================================================================
    GRID (MOSAICO) Y TARJETAS
    ========================================================================== */
+/* [Descripción: Diseño de las tarjetas estilo mosaico para los residentes en el Dashboard.] */
 .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 .card { 
     background: var(--white); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); 
@@ -123,6 +126,7 @@ body {
 /* ==========================================================================
    VISTA LISTA Y GÉNERO
    ========================================================================== */
+/* [Descripción: Contenedores y tabla para la visualización en Lista. Incluye la división dual para el ordenamiento por Género.] */
 .list-container { 
     width: 100%; overflow-x: auto; background: var(--white); border-radius: var(--radius-lg); 
     box-shadow: var(--shadow-sm); padding: 15px; 
@@ -140,7 +144,7 @@ body {
 .data-table tr { cursor: pointer; }
 .data-table tr:hover td { background-color: #eaf1f8; }
 
-/* Para que la columna de # no ocupe lugar excesivo en pantalla */
+/* La columna de # se encoge al máximo para no estorbar a los nombres */
 .data-table th:first-child, .data-table td:first-child { 
     font-weight: bold; color: var(--text-muted); width: 1%; white-space: nowrap; text-align: center; 
 }
@@ -148,28 +152,33 @@ body {
 /* ==========================================================================
    HEADER MINIMALISTA DEL PERFIL
    ========================================================================== */
-.profile-top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; gap: 20px; flex-wrap: wrap; }
+/* [Descripción: Botón circular de volver y estructura de pestañas tipo solapas de carpeta para el Perfil.] */
+.profile-container { max-width: 1200px; margin: 2rem auto; padding: 0 20px; }
+.profile-top-bar { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 0px; gap: 20px; flex-wrap: wrap; border-bottom: 2px solid var(--primary-blue); }
+
 .btn-back-sleek { 
     background: var(--white); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; 
     display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); 
-    text-decoration: none; font-size: 1.2rem; transition: var(--transition); border: 1px solid var(--border-color); flex-shrink: 0; 
+    text-decoration: none; font-size: 1.2rem; transition: var(--transition); border: 1px solid var(--border-color); 
+    flex-shrink: 0; margin-bottom: 10px; 
 }
 .btn-back-sleek:hover { background: var(--bg-main); color: var(--primary-blue); transform: scale(1.05); }
 
-.profile-tabs-group { display: flex; background: var(--white); border-radius: var(--radius-lg); padding: 5px; box-shadow: var(--shadow-sm); }
+.profile-tabs-group { display: flex; gap: 5px; margin-bottom: -2px; }
 .profile-tab { 
-    background: transparent; border: none; padding: 10px 25px; font-weight: 600; 
-    border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted); 
+    background: #e0e6ed; border: 1px solid var(--border-color); border-bottom: none; padding: 12px 25px; 
+    font-weight: 600; border-radius: 8px 8px 0 0; cursor: pointer; color: var(--text-muted); 
     transition: var(--transition); font-size: 0.95rem; 
 }
-.profile-tab.active { background: var(--primary-blue); color: var(--white); }
-.status-badge { background: var(--danger); color: white; padding: 8px 16px; border-radius: var(--radius-lg); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; }
+.profile-tab.active { background: var(--primary-blue); color: var(--white); border-color: var(--primary-blue); }
+
+.status-badge { background: var(--danger); color: white; padding: 8px 16px; border-radius: var(--radius-lg); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; margin-bottom: 10px; }
 
 /* ==========================================================================
    SECCIONES Y ESTRUCTURA DEL PERFIL
    ========================================================================== */
 .tab-content-wrapper { 
-    background-color: var(--primary-blue); padding: 25px; border-radius: var(--radius-lg); 
+    background-color: var(--primary-blue); padding: 25px; border-radius: 0 8px 8px 8px; 
     box-shadow: var(--shadow-md); margin-bottom: 30px; 
 }
 .profile-section { 
@@ -188,6 +197,7 @@ body {
 /* ==========================================================================
    FORMULARIOS Y TIPOGRAFÍA MINIMALISTA
    ========================================================================== */
+/* [Descripción: Inputs estandarizados que mantienen su tamaño natural. En modo readonly pierden los bordes para fusionarse visualmente con el fondo.] */
 .form-row { display: flex; gap: 15px; margin-bottom: 5px; flex-wrap: wrap; }
 .form-group { display: flex; flex-direction: column; flex: 1; min-width: 150px; }
 .flex-2 { flex: 2; }
@@ -203,7 +213,7 @@ body {
 }
 .form-group input:focus, .form-group select:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(10, 61, 145, 0.1); }
 
-/* Ajustes Visuales Solo-Lectura */
+/* Modo solo-lectura: los inputs se ven como texto estático */
 .readonly-mode input, .readonly-mode select { 
     border-color: transparent !important; background: transparent !important; padding-left: 0; 
     color: #1a252f; font-weight: 600; box-shadow: none !important; pointer-events: none; 
@@ -215,7 +225,7 @@ body {
 .readonly-mode .medium-text input { font-size: 1.15rem; font-weight: 600; color: #34495e; }
 
 /* ==========================================================================
-   BLOQUES DINÁMICOS COMPACTOS
+   BLOQUES DINÁMICOS COMPACTOS (OS, Médicos, Responsables)
    ========================================================================== */
 .compact-row { background: #f0f4f8; padding: 12px 15px; border-radius: var(--radius-md); border: 1px solid var(--border-color); border-left: 5px solid var(--primary-blue); transition: var(--transition); display: flex; align-items: flex-end; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px; }
 .compact-row:hover { border-color: var(--primary-blue); box-shadow: var(--shadow-sm); }
@@ -234,6 +244,7 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 .hidden { display: none !important; }
 
+/* El modal acompaña el scroll nativo de la pantalla, sin limites artificiales */
 .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; }
 .modal.show { display: block; }
 .modal-content { background: var(--white); padding: 2rem; border-radius: var(--radius-lg); width: 95%; max-width: 500px; margin: 50px auto; box-shadow: var(--shadow-md); animation: slideUp 0.3s ease; }
@@ -289,7 +300,7 @@ body {
 @media (max-width: 768px) {
     .section-1 { flex-direction: column; align-items: center; }
     .photo-column { flex: 0 0 auto; width: 100%; max-width: 300px; }
-    .tab-content-wrapper { padding: 15px; border-radius: var(--radius-md); }
+    .tab-content-wrapper { padding: 15px; border-radius: 0; }
     .profile-section { padding: 15px; }
     .docs-layout { flex-direction: column; }
     .docs-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #eaeaea; padding-right: 0; padding-bottom: 15px; flex-direction: row; flex-wrap: wrap; }
@@ -301,7 +312,7 @@ body {
 /* ==========================================================================
    REGLAS DE IMPRESIÓN A4 VERTICAL ESTRICTAS
    ========================================================================== */
-/* [Descripción: Refinamiento maestro de la Impresión A4. Se redujeron drásticamente los paddings verticales de la tabla para asegurar que entren +30 residentes sin problemas, manteniendo el texto grande y legible. Los nombres y datos están forzados a nowrap para que queden siempre en 1 línea.] */
+/* [Descripción: Estas reglas controlan que la impresión sea impecable. Forzan orientación Vertical, eliminan la URL del navegador con margin: 10mm, y evitan que la tabla se rompa o corte textos al requerir que todo dato esté en una sola línea (white-space: nowrap). El ajuste en la columna del "#" evita superposiciones.] */
 @media print {
     @page { size: A4 portrait; margin: 10mm; } 
     
@@ -311,33 +322,37 @@ body {
         print-color-adjust: exact; 
     }
     
+    /* Ocultar UI de Navegación */
     .print-hide, .main-header, .tabs-nav, .controls-section, .advanced-toolbar, .modal, .toast, .profile-top-bar { display: none !important; }
     .dashboard-container { padding: 0 !important; margin: 0 !important; box-shadow: none !important; max-width: 100% !important; }
     
-    .print-header { display: flex !important; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid black; padding-bottom: 5px; margin-bottom: 10px; }
+    /* Mostrar cabecera de impresión */
+    .print-header { display: flex !important; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; }
     .print-header h2 { margin: 0; font-size: 18px; color: black; text-transform: uppercase; white-space: nowrap !important; }
-    .print-logo { height: 35px; width: auto; object-fit: contain; }
+    .print-logo { height: 40px; width: auto; object-fit: contain; }
 
+    /* Estructura de la Tabla A4 */
     .list-container { padding: 0 !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; background: transparent !important; }
+    
     .data-table { border: 2px solid black; table-layout: auto; width: 100%; }
     
-    /* Paddings reducidos al extremo verticalmente (3px) para que las filas sean muy finitas y entren los 30 residentes, pero manteniendo la letra grande (clamp) */
-    .data-table th { background: #e0e0e0 !important; color: black !important; border: 1px solid black !important; font-weight: bold; white-space: nowrap !important; padding: 4px 6px !important; }
-    .data-table td { border: 1px solid black !important; color: black !important; white-space: nowrap !important; padding: 3px 6px !important; }
+    /* TODO EN UNA SOLA LÍNEA (sin ocultar texto con puntos) */
+    .data-table th { background: #e0e0e0 !important; color: black !important; border: 1px solid black !important; font-weight: bold; white-space: nowrap !important; padding: 6px 8px !important; }
+    .data-table td { border: 1px solid black !important; color: black !important; white-space: nowrap !important; padding: 5px 8px !important; }
     .data-table tr { page-break-inside: avoid; }
     
-    /* El 1% estricto garantiza que la columna # se encoja para dejar espacio al resto de los datos en A4 */
+    /* Regla Crítica: Evita la superposición forzando la columna del contador a encogerse al máximo */
     .data-table th:first-child, 
     .data-table td:first-child { 
         width: 1% !important; 
         white-space: nowrap !important; 
         text-align: center !important; 
-        padding-right: 8px !important;
-        padding-left: 8px !important;
+        padding-right: 10px !important;
+        padding-left: 10px !important;
     }
     
     .gender-split { flex-direction: row; display: flex; gap: 10px; }
-    .gender-title { background: #e0e0e0 !important; color: black !important; border: 2px solid black; border-bottom: none; font-size: 14px !important; padding: 5px !important; }
+    .gender-title { background: #e0e0e0 !important; color: black !important; border: 2px solid black; border-bottom: none; }
     
     #gridActivos, #gridArchivados { display: none !important; }
 }
