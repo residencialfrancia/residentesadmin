@@ -1,3 +1,4 @@
+<!-- [Descripción: Estructura principal del Dashboard. Se agregó un encabezado minimalista con el logo.png. Incluye la cabecera oculta para la impresión en A4 con logoimpresion.png y la fecha dinámica. Contiene la barra de herramientas avanzada, las áreas dinámicas para el mosaico y las listas, y el modal de reportes personalizados que acompaña el scroll de la página.] -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,8 +12,13 @@
 </head>
 <body>
 
+    <!-- ENCABEZADO MINIMALISTA (Visible solo en pantalla) -->
+    <div style="text-align: center; padding: 20px 0 10px 0;" class="print-hide">
+        <img src="img/logo.png" alt="Residencial Francia" style="height: 60px; object-fit: contain;">
+    </div>
+
     <!-- BARRA DE PESTAÑAS (TABS) -->
-    <nav class="tabs-nav">
+    <nav class="tabs-nav print-hide">
         <button class="tab-btn active" data-tab="tab-activos"><i class="fa-solid fa-users"></i> Residentes Activos</button>
         <button class="tab-btn" data-tab="tab-archivados"><i class="fa-solid fa-box-archive"></i> Archivados</button>
     </nav>
@@ -29,29 +35,33 @@
             <img src="img/logoimpresion.png" alt="Logo" class="print-logo" onerror="this.style.display='none'">
         </div>
 
-        <!-- PESTAÑA 1: ACTIVOS -->
+        <!-- ========================================== -->
+        <!-- PESTAÑA 1: ACTIVOS                         -->
+        <!-- ========================================== -->
         <div id="tab-activos" class="tab-content active">
             
             <!-- CONTROLES BÁSICOS (Buscador y Nuevo Residente) -->
             <section class="controls-section print-hide">
                 <div class="search-box">
                     <i class="fa-solid fa-search"></i>
-                    <input type="text" id="searchActivos" placeholder="Buscar por nombre o DNI...">
+                    <input type="text" id="searchActivos" placeholder="Buscar por Apellido, Nombre o DNI...">
                 </div>
                 <div class="filter-box">
-                    <button class="btn btn-primary" onclick="window.location.href='resident.html'"><i class="fa-solid fa-plus"></i> Nuevo Residente</button>
+                    <button class="btn btn-primary" onclick="window.location.href='resident.html'">
+                        <i class="fa-solid fa-plus"></i> Nuevo Residente
+                    </button>
                 </div>
             </section>
 
-            <!-- BARRA DE HERRAMIENTAS AVANZADA (Filtros, Orden, Reportes, Impresión) -->
+            <!-- BARRA DE HERRAMIENTAS AVANZADA (Vistas, Orden, Reportes, Impresión) -->
             <section class="advanced-toolbar print-hide">
                 
-                <!-- 1. Vistas y Orden -->
+                <!-- Grupo 1: Vistas y Orden -->
                 <div class="toolbar-group">
                     <button class="btn-icon active" id="btnViewGrid" title="Vista Mosaico"><i class="fa-solid fa-grip"></i></button>
                     <button class="btn-icon" id="btnViewList" title="Vista Lista"><i class="fa-solid fa-list"></i></button>
                     
-                    <span style="color: var(--text-muted); margin-left: 10px; font-size: 0.9rem;">Ordenar:</span>
+                    <span style="color: var(--text-muted); margin-left: 10px; font-size: 0.9rem; font-weight: bold;">Ordenar:</span>
                     <select id="sortField">
                         <option value="nombre">Alfabético</option>
                         <option value="edad">Edad</option>
@@ -69,9 +79,9 @@
                     </select>
                 </div>
 
-                <!-- 2. Informes y Botón de Impresión -->
+                <!-- Grupo 2: Informes y Botón de Impresión -->
                 <div class="toolbar-group">
-                    <span style="color: var(--text-muted); font-size: 0.9rem;">Informe:</span>
+                    <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: bold;">Informe:</span>
                     <select id="reportPreset">
                         <option value="default">1. Residentes (Por defecto)</option>
                         <option value="cumple">2. Cumpleaños</option>
@@ -79,9 +89,14 @@
                         <option value="fam">4. Familiares y Responsables</option>
                         <!-- Los reportes personalizados se inyectarán aquí por JS -->
                     </select>
-                    <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="openCustomReportModal()"><i class="fa-solid fa-plus"></i> Crear Filtro</button>
                     
-                    <button class="btn btn-secondary" onclick="executePrint()" style="margin-left: 15px; background: #34495e;"><i class="fa-solid fa-print"></i> Imprimir</button>
+                    <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="openCustomReportModal()">
+                        <i class="fa-solid fa-plus"></i> Crear Filtro
+                    </button>
+                    
+                    <button class="btn btn-secondary" onclick="executePrint()" style="margin-left: 15px; background: #34495e;">
+                        <i class="fa-solid fa-print"></i> Imprimir A4
+                    </button>
                 </div>
             </section>
 
@@ -93,13 +108,15 @@
             <!-- VISTA MOSAICO (Tarjetas) -->
             <section class="grid-container" id="gridActivos"></section>
 
-            <!-- VISTA LISTA (Tabla o tablas divididas por género, inyectada dinámicamente) -->
+            <!-- VISTA LISTA (Tabla, inyectada dinámicamente) -->
             <section class="list-container hidden" id="listActivos">
                 <!-- JS inyectará las tablas aquí -->
             </section>
         </div>
 
-        <!-- PESTAÑA 2: ARCHIVADOS -->
+        <!-- ========================================== -->
+        <!-- PESTAÑA 2: ARCHIVADOS                      -->
+        <!-- ========================================== -->
         <div id="tab-archivados" class="tab-content hidden print-hide">
             <section class="controls-section">
                 <div class="search-box">
@@ -107,20 +124,27 @@
                     <input type="text" id="searchArchivados" placeholder="Buscar en archivo histórico...">
                 </div>
             </section>
+            
             <div id="loaderArchivados" class="loader-container">
                 <div class="spinner"></div><p>Cargando residentes archivados...</p>
             </div>
+            
             <section class="grid-container" id="gridArchivados"></section>
         </div>
     </main>
 
-    <!-- Modal para Crear Informe Personalizado -->
+    <!-- ========================================== -->
+    <!-- MODALES                                    -->
+    <!-- ========================================== -->
+
+    <!-- Modal: Crear Informe Personalizado -->
     <div id="reportModal" class="modal print-hide">
         <div class="modal-content" style="max-width: 750px; width: 95%;">
             <div class="modal-header">
                 <h2>Crear Informe Personalizado</h2>
                 <span class="close" onclick="closeCustomReportModal()">&times;</span>
             </div>
+            
             <div class="modal-body">
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label>Título del Filtro / Informe</label>
@@ -140,6 +164,7 @@
                     <!-- JS inyectará los grupos y checkboxes aquí -->
                 </div>
             </div>
+            
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeCustomReportModal()">Cancelar</button>
                 <button class="btn btn-primary" onclick="saveCustomReport()">Guardar y Aplicar</button>
@@ -147,20 +172,22 @@
         </div>
     </div>
 
-    <!-- Modal para Archivar Residente -->
+    <!-- Modal: Archivar Residente -->
     <div id="archiveModal" class="modal print-hide">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Archivar Residente</h2>
                 <span class="close" id="closeModal">&times;</span>
             </div>
+            
             <div class="modal-body">
                 <p>Indique la fecha de salida para mover a <strong id="archiveName"></strong> al archivo inactivo.</p>
-                <div class="form-group">
+                <div class="form-group" style="margin-top: 15px;">
                     <label>Fecha de Salida</label>
                     <input type="date" id="archiveDate" class="modern-input">
                 </div>
             </div>
+            
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelArchive">Cancelar</button>
                 <button class="btn btn-danger" id="confirmArchive">Archivar Residente</button>
@@ -168,6 +195,7 @@
         </div>
     </div>
 
+    <!-- Javascript -->
     <script src="js/app.js"></script>
 </body>
 </html>
