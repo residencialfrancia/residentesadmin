@@ -301,41 +301,43 @@ body {
 /* ==========================================================================
    REGLAS DE IMPRESIÓN A4 VERTICAL ESTRICTAS
    ========================================================================== */
+/* [Descripción: Refinamiento maestro de la Impresión A4. Se redujeron drásticamente los paddings verticales de la tabla para asegurar que entren +30 residentes sin problemas, manteniendo el texto grande y legible. Los nombres y datos están forzados a nowrap para que queden siempre en 1 línea.] */
 @media print {
     @page { size: A4 portrait; margin: 10mm; } 
     
-    body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { 
+        background: white !important; 
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact; 
+    }
     
-    /* Ocultar Interfaz de Usuario de Navegación */
     .print-hide, .main-header, .tabs-nav, .controls-section, .advanced-toolbar, .modal, .toast, .profile-top-bar { display: none !important; }
     .dashboard-container { padding: 0 !important; margin: 0 !important; box-shadow: none !important; max-width: 100% !important; }
     
-    /* Mostrar cabecera de impresión */
-    .print-header { display: flex !important; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; }
+    .print-header { display: flex !important; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid black; padding-bottom: 5px; margin-bottom: 10px; }
     .print-header h2 { margin: 0; font-size: 18px; color: black; text-transform: uppercase; white-space: nowrap !important; }
-    .print-logo { height: 40px; width: auto; object-fit: contain; }
+    .print-logo { height: 35px; width: auto; object-fit: contain; }
 
-    /* Estructura de la Tabla A4 */
     .list-container { padding: 0 !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; background: transparent !important; }
     .data-table { border: 2px solid black; table-layout: auto; width: 100%; }
     
-    /* white-space: nowrap sin overflow hidden garantiza que el texto nunca se corte, exigiendo que la tabla mantenga todo en 1 línea visible */
-    .data-table th { background: #e0e0e0 !important; color: black !important; border: 1px solid black !important; font-weight: bold; white-space: nowrap !important; }
-    .data-table td { border: 1px solid black !important; color: black !important; white-space: nowrap !important; }
+    /* Paddings reducidos al extremo verticalmente (3px) para que las filas sean muy finitas y entren los 30 residentes, pero manteniendo la letra grande (clamp) */
+    .data-table th { background: #e0e0e0 !important; color: black !important; border: 1px solid black !important; font-weight: bold; white-space: nowrap !important; padding: 4px 6px !important; }
+    .data-table td { border: 1px solid black !important; color: black !important; white-space: nowrap !important; padding: 3px 6px !important; }
     .data-table tr { page-break-inside: avoid; }
     
-    /* Reducción estricta de la columna del hashtag # para no estorbar a los Nombres */
+    /* El 1% estricto garantiza que la columna # se encoja para dejar espacio al resto de los datos en A4 */
     .data-table th:first-child, 
     .data-table td:first-child { 
         width: 1% !important; 
         white-space: nowrap !important; 
         text-align: center !important; 
-        padding-right: 10px !important;
-        padding-left: 10px !important;
+        padding-right: 8px !important;
+        padding-left: 8px !important;
     }
     
     .gender-split { flex-direction: row; display: flex; gap: 10px; }
-    .gender-title { background: #e0e0e0 !important; color: black !important; border: 2px solid black; border-bottom: none; }
+    .gender-title { background: #e0e0e0 !important; color: black !important; border: 2px solid black; border-bottom: none; font-size: 14px !important; padding: 5px !important; }
     
     #gridActivos, #gridArchivados { display: none !important; }
 }
