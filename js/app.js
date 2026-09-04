@@ -1,4 +1,5 @@
-// [Descripción: Variables globales e inicialización del Dashboard. Asegúrate de que el API_URL coincida con tu Nueva Implementación de Apps Script.]
+// [Descripción: Lógica principal del Dashboard. Ahora integra la función getDisplayName para garantizar que en todos los informes, listas y mosaicos SOLO aparezca "Apellido + Nombre Pila", y si es muy largo, lo abrevie a "Apellido + Inicial". Incluye el diccionario de 63 columnas y división de género.]
+
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
@@ -12,18 +13,13 @@ let currentReportId = 'default';
 let customSelectionArray = []; 
 
 // ================= UTILIDADES Y FORMATEO =================
-// [Descripción: Funciones de limpieza de datos para evitar errores si un campo está vacío en Google Sheets.]
 function getArray(arr, idx) { 
     return (arr && arr[idx] && arr[idx].trim() !== '') ? arr[idx] : '-'; 
 }
 
 function formatFecha(f) { 
     if(!f) return '-'; 
-    try { 
-        return f.includes('T') ? f.split('T')[0] : f; 
-    } catch { 
-        return f; 
-    } 
+    try { return f.includes('T') ? f.split('T')[0] : f; } catch{ return f; } 
 }
 
 function formatGenero(g) {
@@ -37,15 +33,9 @@ function formatGenero(g) {
 function calculateAgeToTurn(f) {
     if(!f) return '-';
     let year = 0;
-    
-    if(f.includes('/')) {
-        year = parseInt(f.split('/')[2]);
-    } else if(f.includes('-')) {
-        year = parseInt(f.split('-')[0]);
-    } else {
-        year = new Date(f).getFullYear();
-    }
-    
+    if(f.includes('/')) year = parseInt(f.split('/')[2]);
+    else if(f.includes('-')) year = parseInt(f.split('-')[0]);
+    else year = new Date(f).getFullYear();
     return (new Date().getFullYear() - year) + ' años';
 }
 
@@ -53,19 +43,38 @@ function goToProfile(nombreCompletoAncla) {
     window.location.href = `resident.html?id=${encodeURIComponent(nombreCompletoAncla)}`; 
 }
 
+// [Descripción: Algoritmo Inteligente de Nombres. Si "Apellido + Nombre" supera los 15 caracteres, abrevia el nombre de pila a la primera inicial para evitar desbordar las columnas en la impresión A4.]
+function getDisplayName(r) {
+    let apellido = r.apellido ? r.apellido.trim() : '';
+    let nombrePila = r.nombrePila ? r.nombrePila.trim() : '';
+    
+    // Fallback por si es un residente viejo y no tiene las columnas separadas
+    if (!apellido && !nombrePila) {
+        return r.nombreCorto || r.nombre;
+    }
+    
+    let shortName = (apellido + ' ' + nombrePila).trim();
+    
+    // Si el nombre es demasiado largo, abreviamo el nombre de pila a su inicial
+    if (shortName.length > 15 && nombrePila.length > 0) {
+        shortName = apellido + ' ' + nombrePila.charAt(0).toUpperCase() + '.';
+    }
+    
+    return shortName;
+}
+
 // ================= DICCIONARIO MAESTRO DE COLUMNAS =================
-// [Descripción: Mapeo exacto de las 63 columnas posibles. Se eliminó la abreviación de nombres y ahora usa directamente "nombreCorto" (Apellido + Nombre Pila) como solicitaste para los listados e informes.]
 const COLUMNS_DICT = {
     // 1. Datos Personales
-    'nombre': { tab: 'Datos Personales', label: 'Nombre Completo', extract: r => r.nombreCorto || r.nombre },
+    'nombre': { tab: 'Datos Personales', label: 'Nombre', extract: r => getDisplayName(r) },
     'numeroSocio': { tab: 'Datos Personales', label: 'N° de Socio', extract: r => r.numeroSocio || '-' },
     'apodo': { tab: 'Datos Personales', label: 'Apodo', extract: r => r.apodo || '-' },
-    'fechaNacimiento': { tab: 'Datos Personales', label: 'Fecha Nacimiento', extract: r => formatFecha(r.fechaNacimiento) },
-    'edad': { tab: 'Datos Personales', label: 'Edad', extract: r => r.edad || '-' },
+    'fechaNacimiento': { tab: 'Datos Personales', label: 'Nacimiento', extract: r => formatFecha(r.fechaNacimiento) },
+    'edad': { tab: 'Datos Personales', label: 'Edad Actual', extract: r => r.edad || '-' },
     'edadCumple': { tab: 'Datos Personales', label: 'Cumple', extract: r => calculateAgeToTurn(r.fechaNacimiento) },
     'dni': { tab: 'Datos Personales', label: 'DNI', extract: r => r.dni || '-' },
     'cuil': { tab: 'Datos Personales', label: 'CUIL', extract: r => r.cuil || '-' },
-    'numeroTramite': { tab: 'Datos Personales', label: 'N° Trámite', extract: r => r.numeroTramite || '-' },
+    'numeroTramite': { tab: 'Datos Personales', label: 'N° de Trámite', extract: r => r.numeroTramite || '-' },
     'domicilio': { tab: 'Datos Personales', label: 'Domicilio', extract: r => r.domicilio || '-' },
     'nacionalidad': { tab: 'Datos Personales', label: 'Nacionalidad', extract: r => r.nacionalidad || '-' },
     'fechaIngreso': { tab: 'Datos Personales', label: 'Ingreso', extract: r => formatFecha(r.fechaIngreso) },
@@ -123,27 +132,27 @@ const COLUMNS_DICT = {
     'dniR5': { tab: 'Familiares y Responsables', label: 'DNI Resp 5', extract: r => getArray(r.dniResponsablesList, 4) },
     'domR5': { tab: 'Familiares y Responsables', label: 'Domicilio Resp 5', extract: r => getArray(r.domicilioResponsablesList, 4) },
 
-    // 5. Links y Drive
-    'carpetaDrive': { tab: 'Links', label: 'ID Carpeta Drive', extract: r => r.carpetaDrive || '-' },
-    'fotoUrl': { tab: 'Links', label: 'Foto Perfil', extract: r => r.fotoUrl ? 'Sí' : 'No' },
-    'dniArchivo1': { tab: 'Links', label: 'DNI Frente', extract: r => r.dniArchivo1 ? 'Cargado' : 'Falta' },
-    'dniArchivo2': { tab: 'Links', label: 'DNI Dorso', extract: r => r.dniArchivo2 ? 'Cargado' : 'Falta' },
-    'osFrente1': { tab: 'Links', label: 'OS Frente 1', extract: r => r.osFrente1 ? 'Cargado' : 'Falta' },
-    'osDorso1': { tab: 'Links', label: 'OS Dorso 1', extract: r => r.osDorso1 ? 'Cargado' : 'Falta' },
-    'osFrente2': { tab: 'Links', label: 'OS Frente 2', extract: r => r.osFrente2 ? 'Cargado' : 'Falta' },
-    'osDorso2': { tab: 'Links', label: 'OS Dorso 2', extract: r => r.osDorso2 ? 'Cargado' : 'Falta' },
-    'osFrente3': { tab: 'Links', label: 'OS Frente 3', extract: r => r.osFrente3 ? 'Cargado' : 'Falta' },
-    'osDorso3': { tab: 'Links', label: 'OS Dorso 3', extract: r => r.osDorso3 ? 'Cargado' : 'Falta' },
-    'respFrente1': { tab: 'Links', label: 'DNI Resp Fr 1', extract: r => r.respFrente1 ? 'Cargado' : 'Falta' },
-    'respDorso1': { tab: 'Links', label: 'DNI Resp Do 1', extract: r => r.respDorso1 ? 'Cargado' : 'Falta' },
-    'respFrente2': { tab: 'Links', label: 'DNI Resp Fr 2', extract: r => r.respFrente2 ? 'Cargado' : 'Falta' },
-    'respDorso2': { tab: 'Links', label: 'DNI Resp Do 2', extract: r => r.respDorso2 ? 'Cargado' : 'Falta' },
-    'respFrente3': { tab: 'Links', label: 'DNI Resp Fr 3', extract: r => r.respFrente3 ? 'Cargado' : 'Falta' },
-    'respDorso3': { tab: 'Links', label: 'DNI Resp Do 3', extract: r => r.respDorso3 ? 'Cargado' : 'Falta' },
-    'respFrente4': { tab: 'Links', label: 'DNI Resp Fr 4', extract: r => r.respFrente4 ? 'Cargado' : 'Falta' },
-    'respDorso4': { tab: 'Links', label: 'DNI Resp Do 4', extract: r => r.respDorso4 ? 'Cargado' : 'Falta' },
-    'respFrente5': { tab: 'Links', label: 'DNI Resp Fr 5', extract: r => r.respFrente5 ? 'Cargado' : 'Falta' },
-    'respDorso5': { tab: 'Links', label: 'DNI Resp Do 5', extract: r => r.respDorso5 ? 'Cargado' : 'Falta' }
+    // 5. Links
+    'carpetaDrive': { tab: 'Links', label: 'ID Carpeta', extract: r => r.carpetaDrive || '-' },
+    'fotoUrl': { tab: 'Links', label: 'Foto', extract: r => r.fotoUrl ? 'Sí' : 'No' },
+    'dniArchivo1': { tab: 'Links', label: 'DNI Fr.', extract: r => r.dniArchivo1 ? 'Sí' : 'No' },
+    'dniArchivo2': { tab: 'Links', label: 'DNI Do.', extract: r => r.dniArchivo2 ? 'Sí' : 'No' },
+    'osFrente1': { tab: 'Links', label: 'OS Fr 1', extract: r => r.osFrente1 ? 'Sí' : 'No' },
+    'osDorso1': { tab: 'Links', label: 'OS Do 1', extract: r => r.osDorso1 ? 'Sí' : 'No' },
+    'osFrente2': { tab: 'Links', label: 'OS Fr 2', extract: r => r.osFrente2 ? 'Sí' : 'No' },
+    'osDorso2': { tab: 'Links', label: 'OS Do 2', extract: r => r.osDorso2 ? 'Sí' : 'No' },
+    'osFrente3': { tab: 'Links', label: 'OS Fr 3', extract: r => r.osFrente3 ? 'Sí' : 'No' },
+    'osDorso3': { tab: 'Links', label: 'OS Do 3', extract: r => r.osDorso3 ? 'Sí' : 'No' },
+    'respFrente1': { tab: 'Links', label: 'DNI R1 Fr', extract: r => r.respFrente1 ? 'Sí' : 'No' },
+    'respDorso1': { tab: 'Links', label: 'DNI R1 Do', extract: r => r.respDorso1 ? 'Sí' : 'No' },
+    'respFrente2': { tab: 'Links', label: 'DNI R2 Fr', extract: r => r.respFrente2 ? 'Sí' : 'No' },
+    'respDorso2': { tab: 'Links', label: 'DNI R2 Do', extract: r => r.respDorso2 ? 'Sí' : 'No' },
+    'respFrente3': { tab: 'Links', label: 'DNI R3 Fr', extract: r => r.respFrente3 ? 'Sí' : 'No' },
+    'respDorso3': { tab: 'Links', label: 'DNI R3 Do', extract: r => r.respDorso3 ? 'Sí' : 'No' },
+    'respFrente4': { tab: 'Links', label: 'DNI R4 Fr', extract: r => r.respFrente4 ? 'Sí' : 'No' },
+    'respDorso4': { tab: 'Links', label: 'DNI R4 Do', extract: r => r.respDorso4 ? 'Sí' : 'No' },
+    'respFrente5': { tab: 'Links', label: 'DNI R5 Fr', extract: r => r.respFrente5 ? 'Sí' : 'No' },
+    'respDorso5': { tab: 'Links', label: 'DNI R5 Do', extract: r => r.respDorso5 ? 'Sí' : 'No' }
 };
 
 // ================= REPORTES PREDEFINIDOS =================
@@ -165,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchArchivados();
 });
 
-// [Descripción: Lógica de pestañas principales (Activos vs Archivados)]
 function setupTabs() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -269,9 +277,9 @@ function applyFiltersAndRender() {
     );
 
     filtered.sort((a, b) => {
-        // En el sort usamos r.nombre completo u original (para que Apellido respete la A-Z de forma estricta)
-        let valA = currentSortField === 'nombre' ? a.apellido : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(a) : a[currentSortField]);
-        let valB = currentSortField === 'nombre' ? b.apellido : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(b) : b[currentSortField]);
+        // En el sort usamos r.apellido original (para que la A-Z no se rompa nunca)
+        let valA = currentSortField === 'nombre' ? (a.apellido || a.nombre) : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(a) : a[currentSortField]);
+        let valB = currentSortField === 'nombre' ? (b.apellido || b.nombre) : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(b) : b[currentSortField]);
         
         valA = valA ? valA.toString().toLowerCase() : ''; 
         valB = valB ? valB.toString().toLowerCase() : '';
@@ -307,13 +315,13 @@ function renderList(data) {
     
     document.getElementById('printTitle').textContent = reportDef.title;
     
-    // Auto-ajuste de la fuente basada en la cantidad de columnas (Ideal para impresión A4)
+    // Auto-ajuste de la fuente baseada en la cantidad de columnas seleccionadas (para Impresión A4)
     let fontSize = '13.5px';
     if(activeCols.length > 5) fontSize = '11.5px';
     if(activeCols.length > 7) fontSize = '10px';
     if(activeCols.length > 10) fontSize = '9px';
 
-    // Orden Dinámico: Mover la columna ordenada al principio (después del nombre)
+    // Orden Dinámico: Mover columna de orden al principio
     if (currentReportId === 'default' && currentSortField !== 'nombre' && currentSortField !== 'genero') {
         activeCols = ['nombre', currentSortField];
         
@@ -325,7 +333,7 @@ function renderList(data) {
         });
     }
 
-    // DIVISIÓN POR GÉNERO (Renderiza dos tablas en paralelo)
+    // DIVISIÓN POR GÉNERO
     if (currentSortField === 'genero') {
         let males = data.filter(r => formatGenero(r.genero) === 'Masculino');
         let females = data.filter(r => formatGenero(r.genero) === 'Femenino');
@@ -341,7 +349,6 @@ function renderList(data) {
     }
 }
 
-// [Descripción: Constructor HTML de la tabla. Al hacer clic en la fila tr, redirige al perfil usando el nombre original como ancla.]
 function buildTableHtml(data, cols, title, fontSize) {
     let html = title ? `<div class="gender-column"><h3 class="gender-title">${title}</h3>` : '';
     html += `<table class="data-table" style="font-size: ${fontSize};"><thead><tr><th>#</th>`;
@@ -356,7 +363,7 @@ function buildTableHtml(data, cols, title, fontSize) {
         html += `<tr><td colspan="${cols.length + 1}" style="text-align:center;">No hay residentes</td></tr>`;
     } else {
         data.forEach((res, idx) => {
-            // El click en la fila lleva al perfil usando el Nombre Completo original (ancla)
+            // El click redirige al perfil usando el Nombre Completo original (ancla) para no fallar
             html += `<tr onclick="goToProfile('${res.nombre.replace(/'/g, "\\'")}')"><td>${idx + 1}</td>`;
             cols.forEach(c => { 
                 if(COLUMNS_DICT[c]) html += `<td>${COLUMNS_DICT[c].extract(res)}</td>`; 
@@ -474,7 +481,6 @@ window.executePrint = function() {
 }
 
 // ================= VISTA MOSAICO (TARJETAS) =================
-// [Descripción: Visualización en tarjetas. Muestra el "nombreCorto" para ser estético, pero el click utiliza el nombre completo para abrir el perfil correcto.]
 function renderGrid(data, containerId, isArchived) {
     const grid = document.getElementById(containerId); 
     grid.innerHTML = '';
@@ -515,7 +521,7 @@ function renderGrid(data, containerId, isArchived) {
             <div class="card-header">
                 <img src="${imgSrc}" class="card-img" onerror="this.src='${FALLBACK_IMAGE}'">
                 <div class="card-title">
-                    <h3>${res.nombreCorto || res.nombre}</h3>
+                    <h3>${getDisplayName(res)}</h3>
                 </div>
             </div>
             <div class="card-body">
