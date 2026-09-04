@@ -1,4 +1,4 @@
-// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando o creando un residente. (¡Asegúrate de pegar el enlace de tu Nueva Implementación de Apps Script!)]
+// [Descripción: Variables globales e inicialización del perfil. Se capturan parámetros de la URL para saber si estamos editando o creando un residente.]
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormEvents();
 });
 
-// [Descripción: Funciones utilitarias (Cálculo de edad, extracción de IDs, Formateo de fechas, Traductor de Género y Notificaciones Toast).]
+// ================= FUNCIONES DE UTILIDAD =================
 function calculateAgeLive() {
     const dateVal = document.getElementById('fechaNacimiento').value;
     const ageInput = document.getElementById('edad');
@@ -81,7 +81,7 @@ function showToast(message, isError = false) {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// [Descripción: Navegación visual entre la pestaña del Perfil y la de Documentación.]
+// ================= NAVEGACIÓN DE PESTAÑAS =================
 window.switchProfileTab = function(tabName) {
     const p = document.getElementById('tab-perfil');
     const d = document.getElementById('tab-documentacion');
@@ -101,7 +101,7 @@ window.switchProfileTab = function(tabName) {
     }
 }
 
-// [Descripción: Descarga el JSON con los datos del residente desde el Backend de Google Sheets.]
+// ================= LECTURA DE BASE DE DATOS =================
 async function loadResidentData() {
     const loader = document.getElementById('loader');
     loader.classList.remove('hidden');
@@ -120,6 +120,7 @@ async function loadResidentData() {
             todosLosResidentes = todosLosResidentes.concat(resArchivados.data);
         }
 
+        // Busca al residente por su Nombre Completo
         const resident = todosLosResidentes.find(r => r.nombre === currentResidentName);
         
         if (resident) {
@@ -136,9 +137,18 @@ async function loadResidentData() {
     }
 }
 
-// [Descripción: Inyecta los datos del servidor en el HTML. Construye el selector de género y los bloques de Médicos y Obras Sociales.]
+// ================= POBLAR FORMULARIO HTML =================
 function populateForm(data) {
-    document.getElementById('nombre').value = data.nombre || '';
+    // 1. Asignación de Nombres Separados (Modo Edición)
+    document.getElementById('apellido').value = data.apellido || '';
+    document.getElementById('segundoApellido').value = data.segundoApellido || '';
+    document.getElementById('nombrePila').value = data.nombrePila || '';
+    document.getElementById('segundoNombre').value = data.segundoNombre || '';
+    
+    // 2. Asignación de Nombre Completo (Modo Lectura)
+    document.getElementById('nombreCompleto').value = data.nombre || '';
+
+    // 3. Asignación del resto de datos
     document.getElementById('apodo').value = data.apodo || '';
     document.getElementById('numeroSocio').value = data.numeroSocio || '';
     document.getElementById('fechaNacimiento').value = formatToInputDate(data.fechaNacimiento);
@@ -211,6 +221,7 @@ function populateForm(data) {
         if (divSalida) divSalida.classList.remove('hidden');
         if (inputSalida) inputSalida.value = formatToInputDate(data.fechaSalida);
         if (btnRestore) btnRestore.classList.remove('hidden');
+        
         if (statusBadge) {
             statusBadge.textContent = 'ARCHIVADO';
             statusBadge.classList.remove('hidden');
@@ -227,7 +238,7 @@ function populateForm(data) {
     renderDocumentViewers(data);
 }
 
-// [Descripción: Generadores de filas de Médicos, Obras Sociales (modo compacto) y Responsables.]
+// ================= GENERADORES DE FILAS DINÁMICAS =================
 function addMedicoRow(medValue, espValue) {
     const container = document.getElementById('medicosContainer');
     if(container.children.length >= 3) return showToast("Máximo 3 médicos permitidos.");
@@ -237,7 +248,7 @@ function addMedicoRow(medValue, espValue) {
     row.innerHTML = `
         <div class="form-row" style="align-items: flex-end; width: 100%; margin-bottom: 0; gap: 8px; flex-wrap: nowrap;">
             <div class="form-group" style="flex: 2; min-width: 80px;">
-                <label>Nombre del Médico</label>
+                <label>Médico</label>
                 <input type="text" class="med-nombre" value="${medValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
             <div class="form-group" style="flex: 1.5; min-width: 80px;">
@@ -265,7 +276,7 @@ function addOsRow(osValue, nroValue, dorsoValue) {
                 <input type="text" class="os-name" value="${osValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
             <div class="form-group" style="flex: 1.2; min-width: 60px;">
-                <label>N° Credencial</label>
+                <label>N° Afiliado</label>
                 <input type="text" class="os-number" value="${nroValue}" ${!isEditMode ? 'readonly' : ''}>
             </div>
             <div class="form-group" style="flex: 1.2; min-width: 60px;">
@@ -318,13 +329,13 @@ function addResponsableRow(nombreVal, parentezcoVal, dniVal, telVal, domVal) {
     container.appendChild(row);
 }
 
-// [Descripción: Configura la Pestaña Documentación inyectando la barra lateral y los visores gigantes para los 18 archivos.]
+// ================= VISORES DE DOCUMENTOS (DRIVE) =================
 function renderDocumentViewers(data) {
     const docSections = [
-        { id: 'dni', label: 'DNI Residente', icon: 'fa-id-card', f1: 'dniArchivo1', f2: 'dniArchivo2', t1: 'DNI Frente 1', t2: 'DNI Dorso 2' },
-        { id: 'os1', label: 'Obra Social 1', icon: 'fa-notes-medical', f1: 'osFrente1', f2: 'osDorso1', t1: 'Obra Social Frente 1', t2: 'Obra Social Dorso 1' },
-        { id: 'os2', label: 'Obra Social 2', icon: 'fa-notes-medical', f1: 'osFrente2', f2: 'osDorso2', t1: 'Obra Social Frente 2', t2: 'Obra Social Dorso 2' },
-        { id: 'os3', label: 'Obra Social 3', icon: 'fa-notes-medical', f1: 'osFrente3', f2: 'osDorso3', t1: 'Obra Social Frente 3', t2: 'Obra Social Dorso 3' },
+        { id: 'dni', label: 'DNI Residente', icon: 'fa-id-card', f1: 'dniArchivo1', f2: 'dniArchivo2', t1: 'DNI Frente', t2: 'DNI Dorso' },
+        { id: 'os1', label: 'Obra Social 1', icon: 'fa-notes-medical', f1: 'osFrente1', f2: 'osDorso1', t1: 'OS Frente 1', t2: 'OS Dorso 1' },
+        { id: 'os2', label: 'Obra Social 2', icon: 'fa-notes-medical', f1: 'osFrente2', f2: 'osDorso2', t1: 'OS Frente 2', t2: 'OS Dorso 2' },
+        { id: 'os3', label: 'Obra Social 3', icon: 'fa-notes-medical', f1: 'osFrente3', f2: 'osDorso3', t1: 'OS Frente 3', t2: 'OS Dorso 3' },
         { id: 'resp1', label: 'DNI Responsable 1', icon: 'fa-user-shield', f1: 'respFrente1', f2: 'respDorso1', t1: 'DNI Resp Frente 1', t2: 'DNI Resp Dorso 1' },
         { id: 'resp2', label: 'DNI Responsable 2', icon: 'fa-user-shield', f1: 'respFrente2', f2: 'respDorso2', t1: 'DNI Resp Frente 2', t2: 'DNI Resp Dorso 2' },
         { id: 'resp3', label: 'DNI Responsable 3', icon: 'fa-user-shield', f1: 'respFrente3', f2: 'respDorso3', t1: 'DNI Resp Frente 3', t2: 'DNI Resp Dorso 3' },
@@ -347,7 +358,7 @@ function renderDocumentViewers(data) {
         const val1 = data[sec.f1] || '';
         const val2 = data[sec.f2] || '';
 
-        // Creación del Botón para la Barra Lateral
+        // Botón Barra Lateral
         const btn = document.createElement('button');
         btn.className = `docs-tab-btn`;
         btn.id = `btn-doc-${sec.id}`;
@@ -358,7 +369,7 @@ function renderDocumentViewers(data) {
         };
         sidebar.appendChild(btn);
 
-        // Creación del Panel (Tarjeta Frente y Tarjeta Dorso + Inputs ID)
+        // Panel de Contenido
         const panel = document.createElement('div');
         panel.className = 'doc-panel hidden';
         panel.id = `panel-doc-${sec.id}`;
@@ -390,7 +401,6 @@ function renderDocumentViewers(data) {
     updateDocsSidebarVisibility();
 }
 
-// [Descripción: Retorna el HTML puro de una Tarjeta Visor de Drive con su imagen/pdf renderizado.]
 function createOriginalViewerCard(title, fileId, inputId, icon) {
     const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${extractDriveId(fileId)}` : '#';
     const hiddenClass = isEditMode && !isArchivedProfile ? '' : 'hidden'; 
@@ -434,7 +444,7 @@ function createOriginalViewerCard(title, fileId, inputId, icon) {
     `;
 }
 
-// [Descripción: Oculta la Barra Lateral si no hay ningún documento que mostrar y centra el Mensaje Vacío. Vuelve a mostrar la Barra si entras en modo Edición.]
+// Ocultamiento lógico de subpestañas vacías
 function updateDocsSidebarVisibility() {
     const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
     let firstVisible = null;
@@ -483,7 +493,6 @@ function updateDocsSidebarVisibility() {
     }
 }
 
-// [Descripción: Lógica de alternado visual al hacer clic en un botón de la Barra Lateral.]
 function switchDocSubTab(tabId) {
     const sections = ['dni', 'os1', 'os2', 'os3', 'resp1', 'resp2', 'resp3', 'resp4', 'resp5'];
     
@@ -502,7 +511,8 @@ function switchDocSubTab(tabId) {
     if (activePanel) activePanel.classList.remove('hidden');
 }
 
-// [Descripción: Controlador central del Modo Edición. Activa o desactiva la lectura/escritura de los inputs y muestra los botones de guardar/cancelar correspondientes a la pestaña activa.]
+// ================= CONTROLES DE INTERFAZ =================
+// [Descripción: Controlador Global del Estado de Edición. Alterna entre la fila "rowNombreLectura" y la fila de 4 inputs "rowNombreEdicion".]
 function toggleEditMode(tab, enable) {
     if (isArchivedProfile) {
         return showToast("Perfil archivado: Solo lectura.", true);
@@ -528,6 +538,9 @@ function toggleEditMode(tab, enable) {
         }
         
         if (tab === 'perfil') {
+            document.getElementById('rowNombreLectura').style.display = 'none';
+            document.getElementById('rowNombreEdicion').style.display = 'flex';
+            
             document.getElementById('btnEditPerfil').classList.add('hidden');
             document.getElementById('btnSavePerfil').classList.remove('hidden');
             document.getElementById('btnCancelPerfil').classList.remove('hidden');
@@ -560,6 +573,9 @@ function toggleEditMode(tab, enable) {
         }
         
         if (tab === 'perfil') {
+            document.getElementById('rowNombreLectura').style.display = 'flex';
+            document.getElementById('rowNombreEdicion').style.display = 'none';
+            
             document.getElementById('btnEditPerfil').classList.remove('hidden');
             document.getElementById('btnSavePerfil').classList.add('hidden');
             document.getElementById('btnCancelPerfil').classList.add('hidden');
@@ -585,16 +601,25 @@ function toggleEditMode(tab, enable) {
     }
 }
 
-// [Descripción: Proceso de guardado. Sube imágenes manuales a Drive (si existen), extrae los 18 IDs posibles, empaca los arrays y los manda al backend en Google Sheets.]
+// ================= GUARDAR Y RESTAURAR =================
+// [Descripción: Proceso de guardado. Sube imágenes a Drive, agrupa las listas dinámicas y recoge las 4 cajas de Nombre para enviarlas aisladas al Sheets.]
 async function saveResident(tab) {
     if(isArchivedProfile) return;
     
     const btnSave = tab === 'perfil' ? document.getElementById('btnSavePerfil') : document.getElementById('btnSaveDocs');
     const loader = document.getElementById('loader');
     
-    const nombreInput = document.getElementById('nombre').value.trim();
-    if(!nombreInput) {
-        return showToast("El Nombre Completo es Obligatorio", true);
+    // Extracción de las 4 Cajas de Edición
+    const apellido = document.getElementById('apellido').value.trim();
+    const segundoApellido = document.getElementById('segundoApellido').value.trim();
+    const nombrePila = document.getElementById('nombrePila').value.trim();
+    const segundoNombre = document.getElementById('segundoNombre').value.trim();
+    
+    // Reconstrucción solo para checkeo visual y URL
+    const nombreCompletoCalculado = [apellido, segundoApellido, nombrePila, segundoNombre].filter(Boolean).join(' ').trim();
+    
+    if(!apellido || !nombrePila) {
+        return showToast("El Apellido y el Nombre de Pila son Obligatorios", true);
     }
 
     btnSave.disabled = true; 
@@ -609,7 +634,7 @@ async function saveResident(tab) {
                 body: JSON.stringify({ 
                     action: 'uploadImage', 
                     payload: { 
-                        nombre: nombreInput, 
+                        nombre: nombreCompletoCalculado, 
                         base64: base64ImageToUpload.base64, 
                         mimeType: base64ImageToUpload.mimeType 
                     } 
@@ -628,7 +653,7 @@ async function saveResident(tab) {
                 body: JSON.stringify({ 
                     action: 'uploadDocument', 
                     payload: { 
-                        nombre: nombreInput, 
+                        nombre: nombreCompletoCalculado, 
                         base64: docData.base64, 
                         mimeType: docData.mimeType, 
                         docType: inputId 
@@ -646,9 +671,14 @@ async function saveResident(tab) {
             }
         }
 
+        // Armado del JSON Masivo
         const residentData = {
             nombreViejo: currentResidentName, 
-            nombre: nombreInput, 
+            nombre: nombreCompletoCalculado, 
+            apellido: apellido,
+            segundoApellido: segundoApellido,
+            nombrePila: nombrePila,
+            segundoNombre: segundoNombre,
             apodo: document.getElementById('apodo').value,
             numeroSocio: document.getElementById('numeroSocio').value, 
             fechaNacimiento: document.getElementById('fechaNacimiento').value,
@@ -707,12 +737,12 @@ async function saveResident(tab) {
         if (result.status === 'success') {
             showToast("Guardado correctamente");
             
-            currentResidentName = nombreInput; 
+            currentResidentName = nombreCompletoCalculado; 
             base64ImageToUpload = null; 
             documentsToUpload = {};
             
             toggleEditMode(tab, false); 
-            window.history.replaceState({}, '', `resident.html?id=${encodeURIComponent(nombreInput)}`);
+            window.history.replaceState({}, '', `resident.html?id=${encodeURIComponent(nombreCompletoCalculado)}`);
             
             loadResidentData();
         } else { 
@@ -726,9 +756,8 @@ async function saveResident(tab) {
     }
 }
 
-// [Descripción: Función de restauración que devuelve al residente archivado a la lista de activos.]
 async function restoreResidentProfile() {
-    if (!confirm(`¿Estás seguro de que deseas restaurar a ${currentResidentName} a la lista de residentes activos?`)) return;
+    if (!confirm(`¿Estás seguro de que deseas restaurar a ${currentResidentName} a la lista de activos?`)) return;
 
     const btnRestore = document.getElementById('btnRestore');
     const loader = document.getElementById('loader');
@@ -765,7 +794,7 @@ async function restoreResidentProfile() {
     }
 }
 
-// [Descripción: Llamada al backend para descargar la imagen en formato Base64 sin problemas de CORS.]
+// ================= LLAMADAS A DRIVE =================
 async function loadDriveImageAsBase64(fileId, inputId) {
     const imgElement = document.getElementById(`img-${inputId}`);
     const loaderElement = document.getElementById(`loader-${inputId}`);
@@ -797,7 +826,6 @@ async function loadDriveImageAsBase64(fileId, inputId) {
     }
 }
 
-// [Descripción: Visualización en vivo de archivos adjuntos antes de guardar.]
 window.handleDocumentUpload = function(input, id) {
     const f = input.files[0]; 
     if(!f) return;
@@ -818,7 +846,7 @@ window.handleDocumentUpload = function(input, id) {
     r.readAsDataURL(f);
 };
 
-// [Descripción: Interconexión de clics e inputs a sus respectivas funciones.]
+// ================= INICIALIZACIÓN DE EVENTOS =================
 function setupFormEvents() {
     document.getElementById('btnEditPerfil').onclick = (e) => { e.preventDefault(); toggleEditMode('perfil', true); };
     document.getElementById('btnSavePerfil').onclick = (e) => { e.preventDefault(); saveResident('perfil'); };
