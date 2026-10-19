@@ -1,4 +1,4 @@
-// [Descripción: Lógica principal del Dashboard. Se eliminó definitivamente CUALQUIER abreviatura. Ahora muestra de forma estricta e íntegra "Apellido + Nombre Pila" en mosaicos, listas e informes. Incluye el diccionario de 63 columnas, el creador de filtros personalizados y la división de listas por género.]
+// [Descripción: Lógica principal del Dashboard. Se eliminó definitivamente CUALQUIER abreviatura. Ahora muestra de forma estricta e íntegra "Apellido + Nombre Pila" en mosaicos, listas e informes. Incluye el diccionario de 63 columnas (+ columnas de Archivados), el creador de filtros personalizados y la división de listas por género.]
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
@@ -83,6 +83,7 @@ const COLUMNS_DICT = {
     'nacionalidad': { tab: 'Datos Personales', label: 'Nacionalidad', extract: r => r.nacionalidad || '-' },
     'fechaIngreso': { tab: 'Datos Personales', label: 'Fecha Ingreso', extract: r => formatFecha(r.fechaIngreso) },
     'genero': { tab: 'Datos Personales', label: 'Género', extract: r => formatGenero(r.genero) },
+    'estado': { tab: 'Datos Personales', label: 'Estado', extract: r => r.estado || 'Activo' },
 
     // 2. Datos Médicos
     'lugarInternacion': { tab: 'Datos Médicos', label: 'Lugar Internación', extract: r => r.lugarInternacion || '-' },
@@ -156,7 +157,17 @@ const COLUMNS_DICT = {
     'respFrente4': { tab: 'Links', label: 'DNI Resp Fr 4', extract: r => r.respFrente4 ? 'Cargado' : 'Falta' },
     'respDorso4': { tab: 'Links', label: 'DNI Resp Do 4', extract: r => r.respDorso4 ? 'Cargado' : 'Falta' },
     'respFrente5': { tab: 'Links', label: 'DNI Resp Fr 5', extract: r => r.respFrente5 ? 'Cargado' : 'Falta' },
-    'respDorso5': { tab: 'Links', label: 'DNI Resp Do 5', extract: r => r.respDorso5 ? 'Cargado' : 'Falta' }
+    'respDorso5': { tab: 'Links', label: 'DNI Resp Do 5', extract: r => r.respDorso5 ? 'Cargado' : 'Falta' },
+
+    // 6. Archivados
+    'fechaSalida': { tab: 'Archivados', label: 'Fecha de Salida', extract: r => formatFecha(r.fechaSalida) },
+    'motivoSalida': { tab: 'Archivados', label: 'Motivo de Salida', extract: r => r.motivoSalida || '-' },
+    'detalleSalida': { tab: 'Archivados', label: 'Detalle', extract: r => r.detalleSalida || '-' },
+    'lugarDerivacion': { tab: 'Archivados', label: 'Lugar Derivación', extract: r => r.lugarDerivacion || '-' },
+    'responsableSalida': { tab: 'Archivados', label: 'Responsable Retiro', extract: r => r.responsableSalida || '-' },
+    'dniResponsableSalida': { tab: 'Archivados', label: 'DNI Resp. Retiro', extract: r => r.dniResponsableSalida || '-' },
+    'horaDeceso': { tab: 'Archivados', label: 'Hora Deceso', extract: r => r.horaDeceso || '-' },
+    'linkCertificadoDefuncion': { tab: 'Archivados', label: 'Cert. Defunción', extract: r => r.linkCertificadoDefuncion || '-' }
 };
 
 // ================= REPORTES PREDEFINIDOS =================
@@ -194,6 +205,11 @@ function setupTabs() {
 function setupEventListeners() {
     document.getElementById('searchActivos').addEventListener('input', applyFiltersAndRender);
     
+    const searchArchInput = document.getElementById('searchArchivados');
+    if (searchArchInput) {
+        searchArchInput.addEventListener('input', applyArchivedFiltersAndRender);
+    }
+    
     document.getElementById('btnViewGrid').addEventListener('click', () => { 
         currentView = 'grid'; 
         updateViewButtons(); 
@@ -226,6 +242,11 @@ function setupEventListeners() {
     document.getElementById('closeModal').onclick = closeArchiveModal;
     document.getElementById('cancelArchive').onclick = closeArchiveModal;
     document.getElementById('confirmArchive').onclick = executeArchive;
+
+    const motivoSelect = document.getElementById('archiveMotivo');
+    if (motivoSelect) {
+        motivoSelect.addEventListener('change', handleArchiveMotivoChange);
+    }
 }
 
 function updateViewButtons() {
@@ -263,7 +284,7 @@ async function fetchArchivados() {
         
         if (json.status === 'success') { 
             globalArchivados = json.data; 
-            renderGrid(globalArchivados, 'gridArchivados', true); 
+            applyArchivedFiltersAndRender(); 
         }
     } catch (e) {
         console.error("Error cargando archivados", e);
@@ -273,6 +294,19 @@ async function fetchArchivados() {
 }
 
 // ================= ORDENAMIENTO DINÁMICO =================
+function applyArchivedFiltersAndRender() {
+    const searchInput = document.getElementById('searchArchivados');
+    const term = searchInput ? searchInput.value.toLowerCase() : '';
+
+    let filtered = globalArchivados.filter(r => 
+        r.nombre.toLowerCase().includes(term) || 
+        (r.dni && r.dni.toLowerCase().includes(term)) ||
+        (r.motivoSalida && r.motivoSalida.toLowerCase().includes(term))
+    );
+
+    renderGrid(filtered, 'gridArchivados', true);
+}
+
 function applyFiltersAndRender() {
     const term = document.getElementById('searchActivos').value.toLowerCase();
     
@@ -527,9 +561,9 @@ function renderGrid(data, containerId, isArchived) {
             
             if (actionBtn) {
                 if (actionBtn.dataset.action === 'archive') {
-                    openArchiveModal(res.nombre);
+                    openArchiveModal(res.nombre, res.numeroSocio);
                 } else if (actionBtn.dataset.action === 'restore') {
-                    executeRestore(res.nombre);
+                    executeRestore(res.nombre, res.numeroSocio, actionBtn);
                 }
                 return;
             }
@@ -562,6 +596,16 @@ function renderGrid(data, containerId, isArchived) {
                     <span><i class="fa-solid fa-hashtag"></i> N° Socio:</span>
                     <strong>${res.numeroSocio || 'N/A'}</strong>
                 </div>
+                ${isArchived && res.fechaSalida ? `
+                <div class="info-row">
+                    <span><i class="fa-solid fa-door-open"></i> Salida:</span>
+                    <strong>\${formatFecha(res.fechaSalida)}</strong>
+                </div>` : ''}
+                ${isArchived && res.motivoSalida ? `
+                <div class="info-row">
+                    <span><i class="fa-solid fa-circle-info"></i> Motivo:</span>
+                    <strong style="text-transform: capitalize;">\${res.motivoSalida}</strong>
+                </div>` : ''}
                 <div class="info-row" style="flex-direction: column; gap: 8px; margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
                     <span style="color: var(--primary-blue); font-weight: 600;"><i class="fa-solid fa-notes-medical"></i> Obras Sociales:</span>
                     ${(res.obrasSociales && res.obrasSociales.length > 0 && res.obrasSociales[0] !== "") 
@@ -577,19 +621,92 @@ function renderGrid(data, containerId, isArchived) {
 
 // ================= ARCHIVAR / RESTAURAR =================
 let residentToArchive = null;
+let socioToArchive = null;
 
-window.openArchiveModal = function(nombre) { 
-    residentToArchive = nombre; 
+function handleArchiveMotivoChange() {
+    const motivo = document.getElementById('archiveMotivo').value;
+    const groupDerivacion = document.getElementById('groupDerivacion');
+    const groupResponsable = document.getElementById('groupResponsableSalida');
+    const groupFallecimiento = document.getElementById('groupFallecimiento');
+
+    if (groupDerivacion) groupDerivacion.style.display = 'none';
+    if (groupResponsable) groupResponsable.style.display = 'none';
+    if (groupFallecimiento) groupFallecimiento.style.display = 'none';
+
+    if (motivo === 'derivación medica de urgencia') {
+        if (groupDerivacion) groupDerivacion.style.display = 'block';
+    } else if (motivo === 'traslado voluntario' || motivo === 'retiro por alta') {
+        if (groupResponsable) groupResponsable.style.display = 'block';
+    } else if (motivo === 'retiro por fallecimiento') {
+        if (groupFallecimiento) groupFallecimiento.style.display = 'block';
+    }
+}
+
+window.openArchiveModal = function(nombre, numeroSocio = '') { 
+    residentToArchive = nombre;
+    
+    if (!numeroSocio) {
+        const found = globalActivos.find(r => r.nombre === nombre);
+        socioToArchive = found ? (found.numeroSocio || '') : '';
+    } else {
+        socioToArchive = numeroSocio;
+    }
+
     document.getElementById('archiveName').textContent = nombre; 
+    const badge = document.getElementById('archiveSocioBadge');
+    if (badge) {
+        badge.textContent = socioToArchive ? `(Socio N° ${socioToArchive})` : '';
+    }
+
+    // Fecha local de hoy en formato YYYY-MM-DD
+    const now = new Date();
+    const localToday = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    document.getElementById('archiveDate').value = localToday;
+
+    if (document.getElementById('archiveMotivo')) document.getElementById('archiveMotivo').value = '';
+    if (document.getElementById('archiveDetalle')) document.getElementById('archiveDetalle').value = '';
+    if (document.getElementById('archiveLugarDerivacion')) document.getElementById('archiveLugarDerivacion').value = '';
+    if (document.getElementById('archiveResponsable')) document.getElementById('archiveResponsable').value = '';
+    if (document.getElementById('archiveDniResponsable')) document.getElementById('archiveDniResponsable').value = '';
+    if (document.getElementById('archiveHoraDeceso')) document.getElementById('archiveHoraDeceso').value = '';
+    if (document.getElementById('archiveLinkCertificado')) document.getElementById('archiveLinkCertificado').value = '';
+
+    handleArchiveMotivoChange();
     document.getElementById('archiveModal').classList.add('show'); 
 }
 
 function closeArchiveModal() { 
     document.getElementById('archiveModal').classList.remove('show'); 
     residentToArchive = null; 
+    socioToArchive = null;
 }
 
 async function executeArchive() {
+    const fechaSalida = document.getElementById('archiveDate').value.trim();
+    const motivoSalida = document.getElementById('archiveMotivo') ? document.getElementById('archiveMotivo').value.trim() : '';
+    const detalleSalida = document.getElementById('archiveDetalle') ? document.getElementById('archiveDetalle').value.trim() : '';
+    const lugarDerivacion = document.getElementById('archiveLugarDerivacion') ? document.getElementById('archiveLugarDerivacion').value.trim() : '';
+    const responsableSalida = document.getElementById('archiveResponsable') ? document.getElementById('archiveResponsable').value.trim() : '';
+    const dniResponsableSalida = document.getElementById('archiveDniResponsable') ? document.getElementById('archiveDniResponsable').value.trim() : '';
+    const horaDeceso = document.getElementById('archiveHoraDeceso') ? document.getElementById('archiveHoraDeceso').value.trim() : '';
+    const linkCertificadoDefuncion = document.getElementById('archiveLinkCertificado') ? document.getElementById('archiveLinkCertificado').value.trim() : '';
+
+    if (!fechaSalida) {
+        return alert('Por favor, indique la fecha de salida.');
+    }
+    if (!motivoSalida) {
+        return alert('Por favor, seleccione el motivo claro de la salida.');
+    }
+    if (motivoSalida === 'derivación medica de urgencia' && !lugarDerivacion) {
+        return alert('Por favor, complete el Lugar de Derivación.');
+    }
+    if ((motivoSalida === 'traslado voluntario' || motivoSalida === 'retiro por alta') && (!responsableSalida || !dniResponsableSalida)) {
+        return alert('Por favor, complete el Responsable y el DNI del responsable.');
+    }
+    if (motivoSalida === 'retiro por fallecimiento' && (!horaDeceso || !linkCertificadoDefuncion)) {
+        return alert('Por favor, complete la Hora del deceso y el Link del certificado de defunción.');
+    }
+
     const btn = document.getElementById('confirmArchive'); 
     btn.disabled = true; 
     btn.innerHTML = 'Archivando...';
@@ -601,7 +718,15 @@ async function executeArchive() {
                 action: 'archiveResident', 
                 payload: { 
                     nombre: residentToArchive, 
-                    fechaSalida: document.getElementById('archiveDate').value 
+                    numeroSocio: socioToArchive,
+                    fechaSalida: fechaSalida,
+                    motivoSalida: motivoSalida,
+                    detalleSalida: detalleSalida,
+                    lugarDerivacion: motivoSalida === 'derivación medica de urgencia' ? lugarDerivacion : '',
+                    responsableSalida: (motivoSalida === 'traslado voluntario' || motivoSalida === 'retiro por alta') ? responsableSalida : '',
+                    dniResponsableSalida: (motivoSalida === 'traslado voluntario' || motivoSalida === 'retiro por alta') ? dniResponsableSalida : '',
+                    horaDeceso: motivoSalida === 'retiro por fallecimiento' ? horaDeceso : '',
+                    linkCertificadoDefuncion: motivoSalida === 'retiro por fallecimiento' ? linkCertificadoDefuncion : ''
                 } 
             }) 
         });
@@ -612,6 +737,8 @@ async function executeArchive() {
             closeArchiveModal(); 
             fetchActivos(); 
             fetchArchivados(); 
+        } else {
+            alert('Error al archivar: ' + (jsonResult.message || 'Error desconocido'));
         }
     } catch(e) {
         console.error(e);
@@ -621,15 +748,21 @@ async function executeArchive() {
     }
 }
 
-async function executeRestore(nombre) {
-    if (!confirm(`¿Restaurar a ${nombre}?`)) return;
+async function executeRestore(nombre, numeroSocio = '', btnElement = null) {
+    if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    }
     
     try {
         const res = await fetch(API_URL, { 
             method: 'POST', 
             body: JSON.stringify({ 
                 action: 'restoreResident', 
-                payload: { nombre: nombre } 
+                payload: { 
+                    nombre: nombre,
+                    numeroSocio: numeroSocio
+                } 
             }) 
         });
         
@@ -638,8 +771,15 @@ async function executeRestore(nombre) {
         if(jsonResult.status === 'success') { 
             fetchActivos(); 
             fetchArchivados(); 
+        } else if (btnElement) {
+            btnElement.disabled = false;
+            btnElement.innerHTML = '<i class="fa-solid fa-box-open"></i>';
         }
     } catch(e) {
         console.error(e);
+        if (btnElement) {
+            btnElement.disabled = false;
+            btnElement.innerHTML = '<i class="fa-solid fa-box-open"></i>';
+        }
     }
 }
