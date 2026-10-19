@@ -169,17 +169,66 @@
 
     <!-- Modal: Archivar Residente -->
     <div id="archiveModal" class="modal print-hide">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 550px; width: 95%;">
             <div class="modal-header">
                 <h2>Archivar Residente</h2>
                 <span class="close" id="closeModal">&times;</span>
             </div>
             
             <div class="modal-body">
-                <p>Indique la fecha de salida para mover a <strong id="archiveName"></strong> al archivo inactivo.</p>
+                <p>Complete los datos de salida para mover a <strong id="archiveName"></strong> <span id="archiveSocioBadge" style="color: var(--text-muted); font-size: 0.9rem;"></span> al archivo inactivo.</p>
+                
                 <div class="form-group" style="margin-top: 15px;">
                     <label>Fecha de Salida</label>
                     <input type="date" id="archiveDate" class="modern-input">
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Motivo claro de la salida</label>
+                    <select id="archiveMotivo" class="modern-input">
+                        <option value="">Seleccione un motivo...</option>
+                        <option value="traslado voluntario">Traslado voluntario</option>
+                        <option value="retiro por alta">Retiro por alta</option>
+                        <option value="retiro por fallecimiento">Retiro por fallecimiento</option>
+                        <option value="derivación medica de urgencia">Derivación médica de urgencia</option>
+                    </select>
+                </div>
+
+                <!-- Condicional: Derivación médica de urgencia -->
+                <div id="groupDerivacion" style="display: none;">
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Lugar de Derivación</label>
+                        <input type="text" id="archiveLugarDerivacion" class="modern-input" placeholder="Indique el centro médico o lugar de derivación...">
+                    </div>
+                </div>
+
+                <!-- Condicional: Retiro por alta o Traslado voluntario -->
+                <div id="groupResponsableSalida" style="display: none;">
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Responsable</label>
+                        <input type="text" id="archiveResponsable" class="modern-input" placeholder="Nombre y apellido del responsable...">
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>DNI del responsable</label>
+                        <input type="text" id="archiveDniResponsable" class="modern-input" placeholder="DNI del responsable...">
+                    </div>
+                </div>
+
+                <!-- Condicional: Retiro por fallecimiento -->
+                <div id="groupFallecimiento" style="display: none;">
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Hora del deceso</label>
+                        <input type="time" id="archiveHoraDeceso" class="modern-input">
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Link certificado de defunción</label>
+                        <input type="text" id="archiveLinkCertificado" class="modern-input" placeholder="Pegue el link del certificado de defunción...">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Detalle</label>
+                    <textarea id="archiveDetalle" class="modern-input" rows="3" placeholder="Detalles adicionales acerca de la salida del residente..."></textarea>
                 </div>
             </div>
             
