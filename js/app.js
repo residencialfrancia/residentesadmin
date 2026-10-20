@@ -1,4 +1,4 @@
-// [Descripción: Lógica principal del Dashboard. Se eliminó definitivamente CUALQUIER abreviatura. Ahora muestra de forma estricta e íntegra "Apellido + Nombre Pila" en mosaicos, listas e informes. Incluye el diccionario de 63 columnas (+ columnas de Archivados), el creador de filtros personalizados y la división de listas por género.]
+// [Descripción: Lógica principal del Dashboard adaptada al Sheet Unificado, pestaña "Datos Archivados" y columna "Link Carpeta Residentes".]
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbwS1IP_hh93Alc9YzCxNQr-k0YUh-FDjh8SqEyB4hBz5oUz4sJlHFFYR7nPSyw-89ZM/exec';
 const FALLBACK_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
@@ -14,13 +14,13 @@ let customSelectionArray = [];
 
 // ================= UTILIDADES Y FORMATEO =================
 function getArray(arr, idx) { 
-    return (arr && arr[idx] && arr[idx].trim() !== '') ? arr[idx] : '-'; 
+    return (arr && arr[idx] && arr[idx].toString().trim() !== '') ? arr[idx] : '-'; 
 }
 
 function formatFecha(f) { 
     if(!f) return '-'; 
     try { 
-        return f.includes('T') ? f.split('T')[0] : f; 
+        return f.toString().includes('T') ? f.toString().split('T')[0] : f; 
     } catch { 
         return f; 
     } 
@@ -28,7 +28,7 @@ function formatFecha(f) {
 
 function formatGenero(g) {
     if(!g) return '-';
-    let lg = g.toLowerCase().trim();
+    let lg = g.toString().toLowerCase().trim();
     if(lg.startsWith('m')) return 'Masculino';
     if(lg.startsWith('f')) return 'Femenino';
     return g;
@@ -36,41 +36,42 @@ function formatGenero(g) {
 
 function calculateAgeToTurn(f) {
     if(!f) return '-';
+    let str = f.toString();
     let year = 0;
     
-    if(f.includes('/')) {
-        year = parseInt(f.split('/')[2]);
-    } else if(f.includes('-')) {
-        year = parseInt(f.split('-')[0]);
+    if(str.includes('/')) {
+        year = parseInt(str.split('/')[2]);
+    } else if(str.includes('-')) {
+        year = parseInt(str.split('-')[0]);
     } else {
-        year = new Date(f).getFullYear();
+        year = new Date(str).getFullYear();
     }
     
-    return (new Date().getFullYear() - year) + ' años';
+    return isNaN(year) ? '-' : (new Date().getFullYear() - year) + ' años';
 }
 
 function goToProfile(nombreCompletoAncla) { 
+    if (!nombreCompletoAncla) return;
     window.location.href = `resident.html?id=${encodeURIComponent(nombreCompletoAncla)}`; 
 }
 
-// [Descripción: Función estricta para extraer únicamente el Apellido y el Primer Nombre enteros, sin abreviar absolutamente nada, y descartando segundos nombres o segundos apellidos.]
+// [Descripción: Función estricta para extraer únicamente el Apellido y el Primer Nombre enteros, sin abreviar absolutamente nada.]
 function getDisplayName(r) {
-    let apellido = r.apellido ? r.apellido.trim() : '';
-    let nombrePila = r.nombrePila ? r.nombrePila.trim() : '';
+    if (!r) return 'Sin Nombre';
+    let apellido = r.apellido ? r.apellido.toString().trim() : '';
+    let nombrePila = r.nombrePila ? r.nombrePila.toString().trim() : '';
     
-    // Fallback por si es un residente viejo y no tiene las columnas separadas
     if (!apellido && !nombrePila) {
-        return r.nombreCorto || r.nombre;
+        return r.nombreCorto || r.nombre || ('Socio ' + (r.numeroSocio || ''));
     }
     
-    // Retorna estrictamente el Apellido y el Primer Nombre completos
     return (apellido + ' ' + nombrePila).trim();
 }
 
 // ================= DICCIONARIO MAESTRO DE COLUMNAS =================
 const COLUMNS_DICT = {
     // 1. Datos Personales
-    'nombre': { tab: 'Datos Personales', label: 'Nombre', extract: r => currentView === 'list' ? getDisplayName(r) : r.nombre },
+    'nombre': { tab: 'Datos Personales', label: 'Nombre', extract: r => currentView === 'list' ? getDisplayName(r) : (r.nombre || getDisplayName(r)) },
     'numeroSocio': { tab: 'Datos Personales', label: 'N° de Socio', extract: r => r.numeroSocio || '-' },
     'apodo': { tab: 'Datos Personales', label: 'Apodo', extract: r => r.apodo || '-' },
     'fechaNacimiento': { tab: 'Datos Personales', label: 'Fecha Nacimiento', extract: r => formatFecha(r.fechaNacimiento) },
@@ -138,7 +139,7 @@ const COLUMNS_DICT = {
     'domR5': { tab: 'Familiares y Responsables', label: 'Domicilio Resp 5', extract: r => getArray(r.domicilioResponsablesList, 4) },
 
     // 5. Links y Drive
-    'carpetaDrive': { tab: 'Links', label: 'ID Carpeta', extract: r => r.carpetaDrive || '-' },
+    'carpetaDrive': { tab: 'Links', label: 'Link Carpeta Residentes', extract: r => r.carpetaDrive || '-' },
     'fotoUrl': { tab: 'Links', label: 'Foto Perfil', extract: r => r.fotoUrl ? 'Sí' : 'No' },
     'dniArchivo1': { tab: 'Links', label: 'DNI Frente', extract: r => r.dniArchivo1 ? 'Cargado' : 'Falta' },
     'dniArchivo2': { tab: 'Links', label: 'DNI Dorso', extract: r => r.dniArchivo2 ? 'Cargado' : 'Falta' },
@@ -159,15 +160,15 @@ const COLUMNS_DICT = {
     'respFrente5': { tab: 'Links', label: 'DNI Resp Fr 5', extract: r => r.respFrente5 ? 'Cargado' : 'Falta' },
     'respDorso5': { tab: 'Links', label: 'DNI Resp Do 5', extract: r => r.respDorso5 ? 'Cargado' : 'Falta' },
 
-    // 6. Archivados
-    'fechaSalida': { tab: 'Archivados', label: 'Fecha de Salida', extract: r => formatFecha(r.fechaSalida) },
-    'motivoSalida': { tab: 'Archivados', label: 'Motivo de Salida', extract: r => r.motivoSalida || '-' },
-    'detalleSalida': { tab: 'Archivados', label: 'Detalle', extract: r => r.detalleSalida || '-' },
-    'lugarDerivacion': { tab: 'Archivados', label: 'Lugar Derivación', extract: r => r.lugarDerivacion || '-' },
-    'responsableSalida': { tab: 'Archivados', label: 'Responsable Retiro', extract: r => r.responsableSalida || '-' },
-    'dniResponsableSalida': { tab: 'Archivados', label: 'DNI Resp. Retiro', extract: r => r.dniResponsableSalida || '-' },
-    'horaDeceso': { tab: 'Archivados', label: 'Hora Deceso', extract: r => r.horaDeceso || '-' },
-    'linkCertificadoDefuncion': { tab: 'Archivados', label: 'Cert. Defunción', extract: r => r.linkCertificadoDefuncion || '-' }
+    // 6. Datos Archivados
+    'fechaSalida': { tab: 'Datos Archivados', label: 'Fecha de Salida', extract: r => formatFecha(r.fechaSalida) },
+    'motivoSalida': { tab: 'Datos Archivados', label: 'Motivo de Salida', extract: r => r.motivoSalida || '-' },
+    'detalleSalida': { tab: 'Datos Archivados', label: 'Detalle', extract: r => r.detalleSalida || '-' },
+    'lugarDerivacion': { tab: 'Datos Archivados', label: 'Lugar Derivación', extract: r => r.lugarDerivacion || '-' },
+    'responsableSalida': { tab: 'Datos Archivados', label: 'Responsable Retiro', extract: r => r.responsableSalida || '-' },
+    'dniResponsableSalida': { tab: 'Datos Archivados', label: 'DNI Resp. Retiro', extract: r => r.dniResponsableSalida || '-' },
+    'horaDeceso': { tab: 'Datos Archivados', label: 'Hora Deceso', extract: r => r.horaDeceso || '-' },
+    'linkCertificadoDefuncion': { tab: 'Datos Archivados', label: 'Cert. Defunción', extract: r => r.linkCertificadoDefuncion || '-' }
 };
 
 // ================= REPORTES PREDEFINIDOS =================
@@ -193,22 +194,28 @@ function setupTabs() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); 
+            document.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.remove('active');
+                c.classList.add('hidden');
+            }); 
             
             btn.classList.add('active');
             const targetId = btn.getAttribute('data-tab');
-            document.getElementById(targetId).classList.remove('hidden');
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                targetEl.classList.remove('hidden');
+                targetEl.classList.add('active');
+            }
         });
     });
 }
 
 function setupEventListeners() {
-    document.getElementById('searchActivos').addEventListener('input', applyFiltersAndRender);
+    const sAct = document.getElementById('searchActivos');
+    if (sAct) sAct.addEventListener('input', applyFiltersAndRender);
     
-    const searchArchInput = document.getElementById('searchArchivados');
-    if (searchArchInput) {
-        searchArchInput.addEventListener('input', applyArchivedFiltersAndRender);
-    }
+    const sArc = document.getElementById('searchArchivados');
+    if (sArc) sArc.addEventListener('input', applyArchivedFiltersAndRender);
     
     document.getElementById('btnViewGrid').addEventListener('click', () => { 
         currentView = 'grid'; 
@@ -257,72 +264,77 @@ function updateViewButtons() {
 // ================= FETCH AL SERVIDOR =================
 async function fetchActivos() {
     const loader = document.getElementById('loaderActivos'); 
-    loader.classList.remove('hidden');
+    if (loader) loader.classList.remove('hidden');
     
     try {
         const res = await fetch(`${API_URL}?action=getResidents`);
         const json = await res.json();
         
-        if (json.status === 'success') { 
+        if (json.status === 'success' && Array.isArray(json.data)) { 
             globalActivos = json.data; 
             applyFiltersAndRender(); 
         } 
     } catch (e) {
         console.error("Error cargando activos", e);
     } finally { 
-        loader.classList.add('hidden'); 
+        if (loader) loader.classList.add('hidden'); 
     }
 }
 
 async function fetchArchivados() {
     const loader = document.getElementById('loaderArchivados'); 
-    loader.classList.remove('hidden');
+    if (loader) loader.classList.remove('hidden');
     
     try {
         const res = await fetch(`${API_URL}?action=getArchived`);
         const json = await res.json();
         
-        if (json.status === 'success') { 
+        if (json.status === 'success' && Array.isArray(json.data)) { 
             globalArchivados = json.data; 
             applyArchivedFiltersAndRender(); 
         }
     } catch (e) {
         console.error("Error cargando archivados", e);
     } finally { 
-        loader.classList.add('hidden'); 
+        if (loader) loader.classList.add('hidden'); 
     }
 }
 
-// ================= ORDENAMIENTO DINÁMICO =================
+// ================= FILTRADO Y ORDENAMIENTO DINÁMICO =================
 function applyArchivedFiltersAndRender() {
     const searchInput = document.getElementById('searchArchivados');
-    const term = searchInput ? searchInput.value.toLowerCase() : '';
+    const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-    let filtered = globalArchivados.filter(r => 
-        r.nombre.toLowerCase().includes(term) || 
-        (r.dni && r.dni.toLowerCase().includes(term)) ||
-        (r.motivoSalida && r.motivoSalida.toLowerCase().includes(term))
-    );
+    let filtered = globalArchivados.filter(r => {
+        if (!term) return true;
+        const nom = (r.nombre || getDisplayName(r) || '').toString().toLowerCase();
+        const dni = (r.dni || '').toString().toLowerCase();
+        const soc = (r.numeroSocio || '').toString().toLowerCase();
+        const mot = (r.motivoSalida || '').toString().toLowerCase();
+        return nom.includes(term) || dni.includes(term) || soc.includes(term) || mot.includes(term);
+    });
 
     renderGrid(filtered, 'gridArchivados', true);
 }
 
 function applyFiltersAndRender() {
-    const term = document.getElementById('searchActivos').value.toLowerCase();
+    const term = (document.getElementById('searchActivos')?.value || '').toLowerCase().trim();
     
-    let filtered = globalActivos.filter(r => 
-        r.nombre.toLowerCase().includes(term) || (r.dni && r.dni.includes(term))
-    );
+    let filtered = globalActivos.filter(r => {
+        if (!term) return true;
+        const nom = (r.nombre || getDisplayName(r) || '').toString().toLowerCase();
+        const dni = (r.dni || '').toString().toLowerCase();
+        return nom.includes(term) || dni.includes(term);
+    });
 
     filtered.sort((a, b) => {
-        // En el sort usamos r.apellido puro original para asegurar que la "A-Z" no se rompa nunca
-        let valA = currentSortField === 'nombre' ? (a.apellido || a.nombre) : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(a) : a[currentSortField]);
-        let valB = currentSortField === 'nombre' ? (b.apellido || b.nombre) : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(b) : b[currentSortField]);
+        let valA = currentSortField === 'nombre' ? (a.apellido || a.nombre || '') : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(a) : a[currentSortField]);
+        let valB = currentSortField === 'nombre' ? (b.apellido || b.nombre || '') : (COLUMNS_DICT[currentSortField] ? COLUMNS_DICT[currentSortField].extract(b) : b[currentSortField]);
         
         valA = valA ? valA.toString().toLowerCase() : ''; 
         valB = valB ? valB.toString().toLowerCase() : '';
         
-        if (!isNaN(valA) && !isNaN(valB)) { 
+        if (!isNaN(valA) && !isNaN(valB) && valA !== '' && valB !== '') { 
             valA = parseFloat(valA); 
             valB = parseFloat(valB); 
         }
@@ -353,31 +365,22 @@ function renderList(data) {
     
     document.getElementById('printTitle').textContent = reportDef.title;
     
-    // Auto-ajuste de la fuente baseada en la cantidad de columnas (Ideal para impresión A4)
     let fontSize = '13.5px';
     if(activeCols.length > 5) fontSize = '11.5px';
     if(activeCols.length > 7) fontSize = '10px';
     if(activeCols.length > 10) fontSize = '9px';
 
-    // Orden Dinámico: Mover la columna ordenada a la izquierda (después del nombre)
     if (currentReportId === 'default' && currentSortField !== 'nombre' && currentSortField !== 'genero') {
         activeCols = ['nombre', currentSortField];
         
-        if (currentSortField === 'edad') {
-            activeCols.push('fechaNacimiento');
-        }
-        if (currentSortField === 'numeroSocio') {
-            activeCols.push('fechaIngreso');
-        }
+        if (currentSortField === 'edad') activeCols.push('fechaNacimiento');
+        if (currentSortField === 'numeroSocio') activeCols.push('fechaIngreso');
         
         PRESET_REPORTS['default'].cols.forEach(c => { 
-            if (!activeCols.includes(c)) {
-                activeCols.push(c); 
-            }
+            if (!activeCols.includes(c)) activeCols.push(c); 
         });
     }
 
-    // DIVISIÓN POR GÉNERO
     if (currentSortField === 'genero') {
         let males = data.filter(r => formatGenero(r.genero) === 'Masculino');
         let females = data.filter(r => formatGenero(r.genero) === 'Femenino');
@@ -393,15 +396,12 @@ function renderList(data) {
     }
 }
 
-// Constructor de Tablas (apto para imprimir y hacer clic)
 function buildTableHtml(data, cols, title, fontSize) {
     let html = title ? `<div class="gender-column"><h3 class="gender-title">${title}</h3>` : '';
     html += `<table class="data-table" style="font-size: ${fontSize};"><thead><tr><th>#</th>`;
     
     cols.forEach(c => { 
-        if (COLUMNS_DICT[c]) {
-            html += `<th>${COLUMNS_DICT[c].label}</th>`; 
-        }
+        if (COLUMNS_DICT[c]) html += `<th>${COLUMNS_DICT[c].label}</th>`; 
     });
     
     html += `</tr></thead><tbody>`;
@@ -410,23 +410,17 @@ function buildTableHtml(data, cols, title, fontSize) {
         html += `<tr><td colspan="${cols.length + 1}" style="text-align:center;">No hay residentes</td></tr>`;
     } else {
         data.forEach((res, idx) => {
-            // El clic redirige al perfil usando el Nombre Completo original (ancla) para que funcione la URL
-            html += `<tr onclick="goToProfile('${res.nombre.replace(/'/g, "\\'")}')"><td>${idx + 1}</td>`;
+            const safeName = (res.nombre || getDisplayName(res)).replace(/'/g, "\\'");
+            html += `<tr onclick="goToProfile('${safeName}')"><td>${idx + 1}</td>`;
             cols.forEach(c => { 
-                if (COLUMNS_DICT[c]) {
-                    html += `<td>${COLUMNS_DICT[c].extract(res)}</td>`; 
-                }
+                if (COLUMNS_DICT[c]) html += `<td>${COLUMNS_DICT[c].extract(res)}</td>`; 
             });
             html += `</tr>`;
         });
     }
     
     html += `</tbody></table>`;
-    
-    if (title) {
-        html += `</div>`;
-    }
-    
+    if (title) html += `</div>`;
     return html;
 }
 
@@ -436,7 +430,6 @@ window.openCustomReportModal = function() {
     container.innerHTML = ''; 
     customSelectionArray = [];
     
-    // Inyecta las pestañas y todos sus checkboxes basados en el DICCIONARIO MAESTRO
     const tabs = [...new Set(Object.values(COLUMNS_DICT).map(item => item.tab))];
     
     tabs.forEach(tabName => {
@@ -481,14 +474,10 @@ function updateSelectedOrderUI() {
 
 window.saveCustomReport = function() {
     const title = document.getElementById('customReportTitle').value.trim() || 'Filtro Personalizado';
-    
-    if (customSelectionArray.length === 0) {
-        return alert("Debe seleccionar al menos una columna.");
-    }
+    if (customSelectionArray.length === 0) return alert("Debe seleccionar al menos una columna.");
 
     const reportId = 'custom_' + new Date().getTime();
     customReports[reportId] = { title: title, cols: customSelectionArray.map(i => i.key) };
-    
     localStorage.setItem('customReports', JSON.stringify(customReports));
     
     loadCustomReportsToDropdown();
@@ -497,20 +486,15 @@ window.saveCustomReport = function() {
     
     currentReportId = reportId; 
     currentView = 'list';
-    
     updateViewButtons(); 
     applyFiltersAndRender();
 }
 
 function loadCustomReportsToDropdown() {
     const select = document.getElementById('reportPreset');
-    
     Array.from(select.options).forEach(opt => { 
-        if (opt.value.startsWith('custom_')) {
-            opt.remove(); 
-        }
+        if (opt.value.startsWith('custom_')) opt.remove(); 
     });
-    
     Object.keys(customReports).forEach(key => {
         select.insertAdjacentHTML('beforeend', `<option value="${key}">⭐ ${customReports[key].title}</option>`);
     });
@@ -519,7 +503,6 @@ function loadCustomReportsToDropdown() {
 // ================= IMPRESIÓN =================
 window.executePrint = function() {
     const wasGrid = currentView === 'grid';
-    
     if (wasGrid) { 
         currentView = 'list'; 
         applyFiltersAndRender(); 
@@ -530,7 +513,6 @@ window.executePrint = function() {
     
     setTimeout(() => { 
         window.print(); 
-        
         if (wasGrid) { 
             currentView = 'grid'; 
             applyFiltersAndRender(); 
@@ -541,9 +523,10 @@ window.executePrint = function() {
 // ================= VISTA MOSAICO (TARJETAS) =================
 function renderGrid(data, containerId, isArchived) {
     const grid = document.getElementById(containerId); 
+    if (!grid) return;
     grid.innerHTML = '';
     
-    if (data.length === 0) { 
+    if (!Array.isArray(data) || data.length === 0) { 
         grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">No hay registros.</p>'; 
         return; 
     }
@@ -553,6 +536,8 @@ function renderGrid(data, containerId, isArchived) {
         card.className = `card ${isArchived ? 'archived-card' : ''}`;
         card.style.cursor = 'pointer'; 
         
+        const nombreAncla = res.nombre || getDisplayName(res);
+
         card.onclick = function(e) {
             e.preventDefault(); 
             e.stopPropagation(); 
@@ -561,19 +546,22 @@ function renderGrid(data, containerId, isArchived) {
             
             if (actionBtn) {
                 if (actionBtn.dataset.action === 'archive') {
-                    openArchiveModal(res.nombre, res.numeroSocio);
+                    openArchiveModal(nombreAncla, res.numeroSocio);
                 } else if (actionBtn.dataset.action === 'restore') {
-                    executeRestore(res.nombre, res.numeroSocio, actionBtn);
+                    executeRestore(nombreAncla, res.numeroSocio, actionBtn);
                 }
                 return;
             }
-            goToProfile(res.nombre);
+            goToProfile(nombreAncla);
         };
 
         const imgSrc = res.fotoUrl && res.fotoUrl !== '' ? res.fotoUrl : FALLBACK_IMAGE;
         const actionBtnHtml = !isArchived 
             ? `<button type="button" class="btn-archive-card" data-action="archive" title="Archivar"><i class="fa-solid fa-box-archive"></i></button>` 
             : `<button type="button" class="btn-archive-card" data-action="restore" title="Restaurar"><i class="fa-solid fa-box-open"></i></button>`;
+
+        const osList = Array.isArray(res.obrasSociales) ? res.obrasSociales.filter(Boolean) : [];
+        const nroOsList = Array.isArray(res.numerosOs) ? res.numerosOs : [];
 
         card.innerHTML = `
             ${actionBtnHtml}
@@ -599,17 +587,17 @@ function renderGrid(data, containerId, isArchived) {
                 ${isArchived && res.fechaSalida ? `
                 <div class="info-row">
                     <span><i class="fa-solid fa-door-open"></i> Salida:</span>
-                    <strong>\${formatFecha(res.fechaSalida)}</strong>
+                    <strong>${formatFecha(res.fechaSalida)}</strong>
                 </div>` : ''}
                 ${isArchived && res.motivoSalida ? `
                 <div class="info-row">
                     <span><i class="fa-solid fa-circle-info"></i> Motivo:</span>
-                    <strong style="text-transform: capitalize;">\${res.motivoSalida}</strong>
+                    <strong style="text-transform: capitalize;">${res.motivoSalida}</strong>
                 </div>` : ''}
                 <div class="info-row" style="flex-direction: column; gap: 8px; margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
                     <span style="color: var(--primary-blue); font-weight: 600;"><i class="fa-solid fa-notes-medical"></i> Obras Sociales:</span>
-                    ${(res.obrasSociales && res.obrasSociales.length > 0 && res.obrasSociales[0] !== "") 
-                        ? res.obrasSociales.map((os, idx) => `<div style="display:flex;justify-content:space-between;font-size:0.9rem;padding:4px 0;"><span style="word-break: break-word; flex: 1; padding-right: 10px;">${os}</span><strong>${res.numerosOs[idx] || 'S/N'}</strong></div>`).join('') 
+                    ${osList.length > 0 
+                        ? osList.map((os, idx) => `<div style="display:flex;justify-content:space-between;font-size:0.9rem;padding:4px 0;"><span style="word-break: break-word; flex: 1; padding-right: 10px;">${os}</span><strong>${nroOsList[idx] || 'S/N'}</strong></div>`).join('') 
                         : '<div style="font-size: 0.9rem; color: #888;">Sin cobertura</div>'
                     }
                 </div>
@@ -624,7 +612,8 @@ let residentToArchive = null;
 let socioToArchive = null;
 
 function handleArchiveMotivoChange() {
-    const motivo = document.getElementById('archiveMotivo').value;
+    const motivoEl = document.getElementById('archiveMotivo');
+    const motivo = motivoEl ? motivoEl.value : '';
     const groupDerivacion = document.getElementById('groupDerivacion');
     const groupResponsable = document.getElementById('groupResponsableSalida');
     const groupFallecimiento = document.getElementById('groupFallecimiento');
@@ -654,11 +643,8 @@ window.openArchiveModal = function(nombre, numeroSocio = '') {
 
     document.getElementById('archiveName').textContent = nombre; 
     const badge = document.getElementById('archiveSocioBadge');
-    if (badge) {
-        badge.textContent = socioToArchive ? `(Socio N° ${socioToArchive})` : '';
-    }
+    if (badge) badge.textContent = socioToArchive ? `(Socio N° ${socioToArchive})` : '';
 
-    // Fecha local de hoy en formato YYYY-MM-DD
     const now = new Date();
     const localToday = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     document.getElementById('archiveDate').value = localToday;
@@ -691,12 +677,8 @@ async function executeArchive() {
     const horaDeceso = document.getElementById('archiveHoraDeceso') ? document.getElementById('archiveHoraDeceso').value.trim() : '';
     const linkCertificadoDefuncion = document.getElementById('archiveLinkCertificado') ? document.getElementById('archiveLinkCertificado').value.trim() : '';
 
-    if (!fechaSalida) {
-        return alert('Por favor, indique la fecha de salida.');
-    }
-    if (!motivoSalida) {
-        return alert('Por favor, seleccione el motivo claro de la salida.');
-    }
+    if (!fechaSalida) return alert('Por favor, indique la fecha de salida.');
+    if (!motivoSalida) return alert('Por favor, seleccione el motivo claro de la salida.');
     if (motivoSalida === 'derivación medica de urgencia' && !lugarDerivacion) {
         return alert('Por favor, complete el Lugar de Derivación.');
     }
@@ -748,6 +730,7 @@ async function executeArchive() {
     }
 }
 
+// [Descripción: Restaura un residente archivado de forma directa, sin carteles ni confirmaciones]
 async function executeRestore(nombre, numeroSocio = '', btnElement = null) {
     if (btnElement) {
         btnElement.disabled = true;
