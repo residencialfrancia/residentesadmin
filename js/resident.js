@@ -757,8 +757,6 @@ async function saveResident(tab) {
 }
 
 async function restoreResidentProfile() {
-    if (!confirm(`¿Estás seguro de que deseas restaurar a ${currentResidentName} a la lista de activos?`)) return;
-
     const btnRestore = document.getElementById('btnRestore');
     const loader = document.getElementById('loader');
     
@@ -768,7 +766,10 @@ async function restoreResidentProfile() {
     try {
         const postData = {
             action: 'restoreResident',
-            payload: { nombre: currentResidentName }
+            payload: { 
+                nombre: currentResidentName,
+                numeroSocio: loadedDataGlobal ? loadedDataGlobal.numeroSocio : ''
+            }
         };
 
         const response = await fetch(API_URL, { 
@@ -781,7 +782,7 @@ async function restoreResidentProfile() {
             showToast("Residente restaurado correctamente");
             setTimeout(() => {
                 window.location.href = 'index.html'; 
-            }, 1500);
+            }, 1000);
         } else {
             showToast("Error: " + result.message, true);
             if (btnRestore) btnRestore.disabled = false;
